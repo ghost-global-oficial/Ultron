@@ -127,9 +127,57 @@ function trimToolStream(host: ToolStreamHost) {
 }
 
 function syncToolStreamMessages(host: ToolStreamHost) {
+  // Lista de arquivos de contexto que devem ser ocultados
+  const HIDDEN_CONTEXT_FILES = [
+    'SOUL.md',
+    'USER.md',
+    'IDENTITY.md',
+    'MEMORY.md',
+    'BOOTSTRAP.md',
+    'HEARTBEAT.md',
+    'AGENTS.md',
+    'TOOLS.md',
+  ];
+  
+  // Função para verificar se um tool call deve ser ocultado
+  const shouldHideToolCall = (msg: Record<string, unknown>): boolean => {
+    // Verificar se é um tool call de leitura
+    const toolName = msg.tool_name || msg.name;
+    if (toolName !== 'read') {
+      return false;
+    }
+    
+    // Verificar se está lendo um arquivo de contexto
+    const args = msg.args || msg.input;
+    if (!args || typeof args !== 'object') {
+      return false;
+    }
+    
+    const argsObj = args as Record<string, unknown>;
+    const path = argsObj.path;
+    
+    if (typeof path !== 'string') {
+      return false;
+    }
+    
+    // Normalizar o path (substituir \ por /)
+    const normalizedPath = path.replace(/\\/g, '/');
+    
+    // Verificar se o path termina com algum dos arquivos de contexto
+    const isContextFile = HIDDEN_CONTEXT_FILES.some(file => 
+      normalizedPath.endsWith(file) || normalizedPath.endsWith(file.toLowerCase())
+    );
+    
+    // Verificar se está lendo da pasta memory/
+    const isMemoryFile = normalizedPath.includes('/memory/') || normalizedPath.includes('\\memory\\');
+    
+    return isContextFile || isMemoryFile;
+  };
+  
   host.chatToolMessages = host.toolStreamOrder
     .map((id) => host.toolStreamById.get(id)?.message)
-    .filter((msg): msg is Record<string, unknown> => Boolean(msg));
+    .filter((msg): msg is Record<string, unknown> => Boolean(msg))
+    .filter((msg) => !shouldHideToolCall(msg)); // Filtrar arquivos de contexto
 }
 
 export function flushToolStreamSync(host: ToolStreamHost) {

@@ -1,4 +1,4 @@
-import type { OpenClawApp } from "./app";
+import type { UltronApp } from "./app";
 import type { EventLogEntry } from "./app-events";
 import type { ExecApprovalRequest } from "./controllers/exec-approval";
 import type { GatewayEventFrame, GatewayHelloOk } from "./gateway";
@@ -135,10 +135,29 @@ export function connectGateway(host: GatewayHost) {
       (host as unknown as { chatStream: string | null }).chatStream = null;
       (host as unknown as { chatStreamStartedAt: number | null }).chatStreamStartedAt = null;
       resetToolStream(host as unknown as Parameters<typeof resetToolStream>[0]);
-      void loadAssistantIdentity(host as unknown as OpenClawApp);
-      void loadAgents(host as unknown as OpenClawApp);
-      void loadNodes(host as unknown as OpenClawApp, { quiet: true });
-      void loadDevices(host as unknown as OpenClawApp, { quiet: true });
+      
+      // Exit onboarding mode after successful connection
+      if (host.onboarding) {
+        host.onboarding = false;
+        // Remove onboarding parameter from URL
+        if (typeof window !== "undefined" && window.location.search.includes("onboarding")) {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("onboarding");
+          window.history.replaceState({}, "", url.toString());
+        }
+        // Navigate to chat after onboarding using a small delay to ensure state is settled
+        setTimeout(() => {
+          const setTab = (host as unknown as { setTab: (tab: Tab) => void }).setTab;
+          if (typeof setTab === "function") {
+            setTab("chat");
+          }
+        }, 100);
+      }
+      
+      void loadAssistantIdentity(host as unknown as UltronApp);
+      void loadAgents(host as unknown as UltronApp);
+      void loadNodes(host as unknown as UltronApp, { quiet: true });
+      void loadDevices(host as unknown as UltronApp, { quiet: true });
       void refreshActiveTab(host as unknown as Parameters<typeof refreshActiveTab>[0]);
     },
     onClose: ({ code, reason }) => {
@@ -186,6 +205,12 @@ function handleGatewayEventUnsafe(host: GatewayHost, evt: GatewayEventFrame) {
 
   if (evt.event === "chat") {
     const payload = evt.payload as ChatEventPayload | undefined;
+    console.log('[DEBUG] Gateway chat event:', {
+      state: payload?.state,
+      runId: payload?.runId,
+      sessionKey: payload?.sessionKey,
+      hasMessage: !!payload?.message,
+    });
     if (payload?.sessionKey) {
       setLastActiveSessionKey(
         host as unknown as Parameters<typeof setLastActiveSessionKey>[0],
@@ -200,9 +225,39 @@ function handleGatewayEventUnsafe(host: GatewayHost, evt: GatewayEventFrame) {
       if (runId && host.refreshSessionsAfterChat.has(runId)) {
         host.refreshSessionsAfterChat.delete(runId);
         if (state === "final") {
-          void loadSessions(host as unknown as OpenClawApp, {
-            activeMinutes: CHAT_SESSIONS_ACTIVE_MINUTES,
-          });
+          // Recarrega todas as sessões sem filtro de tempo para garantir que a sessão atual apareça
+          void loadSessions(host as unknown as OpenClawApp);
+          
+          // Gerar nome automático para novas tarefas
+          const sessionKey = payload?.sessionKey;
+          if (sessionKey && (host as any).sessionsNeedingName?.has(sessionKey)) {
+            (host as any).sessionsNeedingName.delete(sessionKey);
+            
+            // Pegar a primeira mensagem do usuário
+            const messages = (host as any).chatMessages || [];
+            const firstUserMessage = messages.find((m: any) => m.role === 'user');
+            
+            if (firstUserMessage) {
+              // Extrair texto da mensagem
+              let messageText = '';
+              if (typeof firstUserMessage.content === 'string') {
+                messageText = firstUserMessage.content;
+              } else if (Array.isArray(firstUserMessage.content)) {
+                const textBlock = firstUserMessage.content.find((b: any) => b.type === 'text');
+                if (textBlock?.text) {
+                  messageText = textBlock.text;
+                }
+              }
+              
+              if (messageText) {
+                // Gerar e atualizar o nome
+                void (async () => {
+                  const taskName = await (host as any).generateTaskName(sessionKey, messageText);
+                  await (host as any).updateSessionLabel(sessionKey, taskName);
+                })();
+              }
+            }
+          }
         }
       }
     }
@@ -227,7 +282,7 @@ function handleGatewayEventUnsafe(host: GatewayHost, evt: GatewayEventFrame) {
   }
 
   if (evt.event === "device.pair.requested" || evt.event === "device.pair.resolved") {
-    void loadDevices(host as unknown as OpenClawApp, { quiet: true });
+    void loadDevices(host as unknown as UltronApp, { quiet: true });
   }
 
   if (evt.event === "exec.approval.requested") {

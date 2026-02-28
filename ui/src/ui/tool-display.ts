@@ -163,10 +163,11 @@ export function resolveToolDisplay(params: {
 }): ToolDisplay {
   const name = normalizeToolName(params.name);
   const key = name.toLowerCase();
+  console.log("[TOOL-DISPLAY] Tool called:", key, "Args:", params.args);
   const spec = TOOL_MAP[key];
   const icon = (spec?.icon ?? FALLBACK.icon ?? "puzzle") as IconName;
   const title = spec?.title ?? defaultTitle(name);
-  const label = spec?.label ?? name;
+  let label = spec?.label ?? name;
   const actionRaw =
     params.args && typeof params.args === "object"
       ? ((params.args as Record<string, unknown>).action as string | undefined)
@@ -181,6 +182,86 @@ export function resolveToolDisplay(params: {
   }
   if (!detail && (key === "write" || key === "edit" || key === "attach")) {
     detail = resolveWriteDetail(params.args);
+  }
+
+  // Special handling for "web_search" - show query in label
+  if (key === "web_search" && params.args && typeof params.args === "object") {
+    const argsRecord = params.args as Record<string, unknown>;
+    const query = typeof argsRecord.query === "string" ? argsRecord.query : undefined;
+    if (query) {
+      label = `Searching: ${query}`;
+      detail = undefined; // Don't show detail, query is in label
+    }
+  }
+
+  // Special handling for "web_fetch" - show URL in label
+  if (key === "web_fetch" && params.args && typeof params.args === "object") {
+    const argsRecord = params.args as Record<string, unknown>;
+    const url = typeof argsRecord.url === "string" ? argsRecord.url : undefined;
+    if (url) {
+      // Shorten URL if too long
+      const shortUrl = url.length > 50 ? url.substring(0, 47) + "..." : url;
+      label = `Fetching: ${shortUrl}`;
+      detail = undefined; // Don't show detail, URL is in label
+    }
+  }
+
+  // Special handling for "bash", "exe", and "exec" tools - generate descriptive label from command
+  if ((key === "bash" || key === "exe" || key === "exec") && params.args && typeof params.args === "object") {
+    const argsRecord = params.args as Record<string, unknown>;
+    console.log("[DEBUG] bash/exe tool args:", JSON.stringify(params.args, null, 2));
+    const command = typeof argsRecord.command === "string" ? argsRecord.command : undefined;
+    console.log("[DEBUG] extracted command:", command);
+    if (command) {
+      // Extract app name from various command patterns
+      let appName: string | undefined;
+      
+      // Pattern 1: "start appname" or "open appname" or "Start-Process appname"
+      const startMatch = command.match(/(?:start|open|Start-Process)\s+([^\s&|;]+)/i);
+      if (startMatch && startMatch[1]) {
+        appName = startMatch[1];
+      }
+      
+      // Pattern 2: Direct executable like "blender.exe" or "code.exe"
+      if (!appName) {
+        const exeMatch = command.match(/([^\s\\\/]+)\.exe/i);
+        if (exeMatch && exeMatch[1]) {
+          appName = exeMatch[1];
+        }
+      }
+      
+      // Pattern 3: Path to executable like "C:\Program Files\App\app.exe"
+      if (!appName) {
+        const pathMatch = command.match(/[\\\/]([^\\\/]+)\.exe/i);
+        if (pathMatch && pathMatch[1]) {
+          appName = pathMatch[1];
+        }
+      }
+      
+      // Pattern 4: Just the command name (first word) - but skip PowerShell cmdlets
+      if (!appName) {
+        const firstWord = command.split(/\s+/)[0];
+        // Skip if it's a PowerShell cmdlet (contains hyphen)
+        if (firstWord && firstWord.length > 0 && !firstWord.includes('-')) {
+          appName = firstWord;
+        }
+      }
+      
+      if (appName) {
+        // Clean up the app name
+        appName = appName.replace(/['"]/g, '').trim();
+        
+        // Capitalize first letter
+        const cleanName = appName.charAt(0).toUpperCase() + appName.slice(1);
+        
+        // Generate friendly message
+        label = `Opening ${cleanName}`;
+        detail = undefined; // Don't show command details
+      } else {
+        label = "Running command";
+        detail = undefined; // Don't show command details
+      }
+    }
   }
 
   const detailKeys = actionSpec?.detailKeys ?? spec?.detailKeys ?? FALLBACK.detailKeys ?? [];

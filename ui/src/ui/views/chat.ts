@@ -12,6 +12,8 @@ import {
 import { normalizeMessage, normalizeRoleForGrouping } from "../chat/message-normalizer";
 import { icons } from "../icons";
 import { renderMarkdownSidebar } from "./markdown-sidebar";
+import { renderChatWelcome } from "./chat-welcome";
+import { startAnimatedPlaceholder, stopAnimatedPlaceholder, pauseAnimatedPlaceholder, resumeAnimatedPlaceholder } from "../animated-placeholder";
 import "../components/resizable-divider";
 
 export type CompactionIndicatorStatus = {
@@ -65,6 +67,8 @@ export type ChatProps = {
   onCloseSidebar?: () => void;
   onSplitRatioChange?: (ratio: number) => void;
   onChatScroll?: (event: Event) => void;
+  onConnectorsMenuOpen?: (event: MouseEvent) => void;
+  onScheduleTask?: () => void;
 };
 
 const COMPACTION_TOAST_DURATION_MS = 5000;
@@ -198,11 +202,24 @@ export function renderChat(props: ChatProps) {
   const composePlaceholder = props.connected
     ? hasAttachments
       ? "Add a message or paste more images..."
-      : "Message (↩ to send, Shift+↩ for line breaks, paste images)"
+      : "" // Placeholder será gerenciado pela animação
     : "Connect to the gateway to start chatting…";
 
   const splitRatio = props.splitRatio ?? 0.6;
   const sidebarOpen = Boolean(props.sidebarOpen && props.onCloseSidebar);
+  
+  // Verifica se o chat está vazio (sem mensagens)
+  const chatItems = buildChatItems(props);
+  const isEmpty = chatItems.length === 0 && !props.loading;
+  
+  console.log('[DEBUG] Chat render state:', {
+    chatItemsCount: chatItems.length,
+    isEmpty,
+    loading: props.loading,
+    messagesCount: Array.isArray(props.messages) ? props.messages.length : 0,
+    sessionKey: props.sessionKey,
+  });
+  
   const thread = html`
     <div
       class="chat-thread"
@@ -211,14 +228,37 @@ export function renderChat(props: ChatProps) {
       @scroll=${props.onChatScroll}
     >
       ${
-        props.loading
+        isEmpty
+          ? renderChatWelcome({
+              draft: props.draft,
+              connected: props.connected,
+              sending: props.sending,
+              onDraftChange: props.onDraftChange,
+              onSend: props.onSend,
+              onConnectorsMenuOpen: props.onConnectorsMenuOpen,
+              onScheduleTask: props.onScheduleTask,
+              onSuggestionClick: (text) => {
+                props.onDraftChange(text);
+                // Foca no textarea após selecionar sugestão
+                setTimeout(() => {
+                  const textarea = document.querySelector(".chat-welcome textarea") as HTMLTextAreaElement;
+                  if (textarea) {
+                    textarea.focus();
+                  }
+                }, 100);
+              },
+            })
+          : nothing
+      }
+      ${
+        props.loading && !isEmpty
           ? html`
               <div class="muted">Loading chat…</div>
             `
           : nothing
       }
       ${repeat(
-        buildChatItems(props),
+        chatItems,
         (item) => item.key,
         (item) => {
           if (item.kind === "reading-indicator") {
@@ -340,60 +380,177 @@ export function renderChat(props: ChatProps) {
           : nothing
       }
 
-      <div class="chat-compose">
-        ${renderAttachmentPreview(props)}
-        <div class="chat-compose__row">
-          <label class="field chat-compose__field">
-            <span>Message</span>
-            <textarea
-              ${ref((el) => el && adjustTextareaHeight(el as HTMLTextAreaElement))}
-              .value=${props.draft}
-              ?disabled=${!props.connected}
-              @keydown=${(e: KeyboardEvent) => {
-                if (e.key !== "Enter") {
-                  return;
-                }
-                if (e.isComposing || e.keyCode === 229) {
-                  return;
-                }
-                if (e.shiftKey) {
-                  return;
-                } // Allow Shift+Enter for line breaks
-                if (!props.connected) {
-                  return;
-                }
-                e.preventDefault();
-                if (canCompose) {
-                  props.onSend();
-                }
-              }}
-              @input=${(e: Event) => {
-                const target = e.target as HTMLTextAreaElement;
-                adjustTextareaHeight(target);
-                props.onDraftChange(target.value);
-              }}
-              @paste=${(e: ClipboardEvent) => handlePaste(e, props)}
-              placeholder=${composePlaceholder}
-            ></textarea>
-          </label>
-          <div class="chat-compose__actions">
-            <button
-              class="btn"
-              ?disabled=${!props.connected || (!canAbort && props.sending)}
-              @click=${canAbort ? props.onAbort : props.onNewSession}
-            >
-              ${canAbort ? "Stop" : "New session"}
-            </button>
-            <button
-              class="btn primary"
-              ?disabled=${!props.connected}
-              @click=${props.onSend}
-            >
-              ${isBusy ? "Queue" : "Send"}<kbd class="btn-kbd">↵</kbd>
-            </button>
-          </div>
-        </div>
-      </div>
+      ${
+        isEmpty
+          ? nothing
+          : html`
+              <div class="chat-compose">
+                ${renderAttachmentPreview(props)}
+                <div class="chat-compose__row">
+                  <label class="field chat-compose__field">
+                    <span>Message</span>
+                    <textarea
+                      ${ref((el) => {
+                        if (el) {
+                          adjustTextareaHeight(el as HTMLTextAreaElement);
+                          // Iniciar animação do placeholder se conectado e sem anexos
+                          if (props.connected && !hasAttachments) {
+                            startAnimatedPlaceholder(el as HTMLTextAreaElement);
+                          }
+                        }
+                      })}
+                      .value=${props.draft}
+                      ?disabled=${!props.connected}
+                      @focus=${() => {
+                        // Pausar animação quando o usuário focar no campo
+                        pauseAnimatedPlaceholder();
+                      }}
+                      @blur=${(e: FocusEvent) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        // Retomar animação se o campo estiver vazio e conectado
+                        if (target.value === "" && props.connected && !hasAttachments) {
+                          resumeAnimatedPlaceholder();
+                        }
+                      }}
+                      @keydown=${(e: KeyboardEvent) => {
+                        if (e.key !== "Enter") {
+                          return;
+                        }
+                        if (e.isComposing || e.keyCode === 229) {
+                          return;
+                        }
+                        if (e.shiftKey) {
+                          return;
+                        } // Allow Shift+Enter for line breaks
+                        if (!props.connected) {
+                          return;
+                        }
+                        e.preventDefault();
+                        if (canCompose) {
+                          props.onSend();
+                        }
+                      }}
+                      @input=${(e: Event) => {
+                        const target = e.target as HTMLTextAreaElement;
+                        adjustTextareaHeight(target);
+                        props.onDraftChange(target.value);
+                      }}
+                      @paste=${(e: ClipboardEvent) => handlePaste(e, props)}
+                      placeholder=${composePlaceholder}
+                    ></textarea>
+                  </label>
+                  
+                  <!-- Linha inferior com todos os botões -->
+                  <div class="chat-compose__bottom">
+                    <!-- Botão de Mais (à esquerda) -->
+                    <div class="chat-compose__add-menu">
+                      <button
+                        class="btn btn-icon chat-compose__add-btn"
+                        type="button"
+                        aria-label="Add content"
+                        title="Add content"
+                        @click=${(e: Event) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const button = e.currentTarget as HTMLElement;
+                          const menu = button.parentElement?.querySelector('.chat-compose__menu') as HTMLElement;
+                          if (menu) {
+                            menu.classList.toggle('chat-compose__menu--open');
+                          }
+                        }}
+                      >
+                        ${icons.plus}
+                      </button>
+                      <div class="chat-compose__menu">
+                        <button class="chat-compose__menu-item" type="button">
+                          ${icons.cloud} Adicionar a partir do Drive
+                        </button>
+                        <button class="chat-compose__menu-item" type="button">
+                          ${icons.cloud} Adicionar a partir do OneDrive
+                        </button>
+                        <button class="chat-compose__menu-item" type="button">
+                          ${icons.bot} Modelo predefinido da IA
+                        </button>
+                        <button class="chat-compose__menu-item" type="button">
+                          ${icons.zap} Competências
+                        </button>
+                    <button class="chat-compose__menu-item" type="button" @click=${() => {
+                      // Fecha o menu
+                      const menu = document.querySelector('.chat-compose__menu--open') as HTMLElement;
+                      if (menu) {
+                        menu.classList.remove('chat-compose__menu--open');
+                      }
+                      // Abre o painel de agendamento
+                      if (props.onScheduleTask) {
+                        props.onScheduleTask();
+                      }
+                    }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                      </svg>
+                      Agendar tarefa
+                    </button>
+                        <button class="chat-compose__menu-item chat-compose__menu-item--puzzle" type="button" @click=${(e: MouseEvent) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          // Fecha o menu de "mais"
+                          const menu = (e.currentTarget as HTMLElement).closest('.chat-compose__menu') as HTMLElement;
+                          if (menu) {
+                            menu.classList.remove('chat-compose__menu--open');
+                          }
+                          // Abre o menu de conectores
+                          if (props.onConnectorsMenuOpen) {
+                            props.onConnectorsMenuOpen(e);
+                          }
+                        }}>
+                          ${icons.puzzle} Conectores
+                        </button>
+                        <button class="chat-compose__menu-item chat-compose__menu-item--paperclip" type="button">
+                          ${icons.paperclip} Adicionar do local
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div class="chat-compose__actions">
+                      <button
+                        class="btn"
+                        ?disabled=${!props.connected || (!canAbort && props.sending)}
+                        @click=${canAbort ? props.onAbort : props.onNewSession}
+                      >
+                        ${canAbort ? "Stop" : "New session"}
+                      </button>
+                      
+                      <!-- Botão de Microfone -->
+                      <button
+                        class="btn btn-icon chat-compose__mic-btn"
+                        type="button"
+                        aria-label="Voice input"
+                        title="Voice input"
+                        ?disabled=${!props.connected}
+                      >
+                        ${icons.mic}
+                      </button>
+                      
+                      <!-- Botão de Enviar (Seta para cima) -->
+                      <button
+                        class="btn btn-icon primary chat-compose__send-btn"
+                        type="button"
+                        aria-label="Send message"
+                        title="Send message (Enter)"
+                        ?disabled=${!props.connected}
+                        @click=${props.onSend}
+                      >
+                        ${icons.arrowUp}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `
+      }
     </section>
   `;
 }
@@ -445,6 +602,16 @@ function buildChatItems(props: ChatProps): Array<ChatItem | MessageGroup> {
   const items: ChatItem[] = [];
   const history = Array.isArray(props.messages) ? props.messages : [];
   const tools = Array.isArray(props.toolMessages) ? props.toolMessages : [];
+  
+  console.log('[DEBUG] Building chat items:', {
+    historyCount: history.length,
+    toolsCount: tools.length,
+    loading: props.loading,
+    hasStream: props.stream !== null,
+    streamLength: props.stream?.length ?? 0,
+    streamPreview: props.stream?.substring(0, 100),
+  });
+  
   const historyStart = Math.max(0, history.length - CHAT_HISTORY_RENDER_LIMIT);
   if (historyStart > 0) {
     items.push({
@@ -483,6 +650,11 @@ function buildChatItems(props: ChatProps): Array<ChatItem | MessageGroup> {
 
   if (props.stream !== null) {
     const key = `stream:${props.sessionKey}:${props.streamStartedAt ?? "live"}`;
+    console.log('[DEBUG] Adding stream item:', {
+      key,
+      streamLength: props.stream.length,
+      hasContent: props.stream.trim().length > 0,
+    });
     if (props.stream.trim().length > 0) {
       items.push({
         kind: "stream",
@@ -495,7 +667,14 @@ function buildChatItems(props: ChatProps): Array<ChatItem | MessageGroup> {
     }
   }
 
-  return groupMessages(items);
+  const grouped = groupMessages(items);
+  console.log('[DEBUG] Chat items built:', {
+    itemsCount: items.length,
+    groupedCount: grouped.length,
+    lastItemKind: items[items.length - 1]?.kind,
+  });
+  
+  return grouped;
 }
 
 function messageKey(message: unknown, index: number): string {

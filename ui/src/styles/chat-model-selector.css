@@ -1,0 +1,303 @@
+/* =============================================
+   CHAT MODEL SELECTOR - Seletor de modelo de IA
+   ============================================= */
+
+.chat-model-selector {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.chat-model-selector__button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #9ca3af;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 150ms ease-out;
+  white-space: nowrap;
+}
+
+.chat-model-selector__button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #e5e7eb;
+}
+
+.chat-model-selector__button svg:first-child {
+  width: 16px;
+  height: 16px;
+  stroke: #9ca3af;
+  flex-shrink: 0;
+}
+
+.chat-model-selector__button svg:last-child {
+  width: 14px;
+  height: 14px;
+  stroke: #6b7280;
+  flex-shrink: 0;
+}
+
+.chat-model-selector__text {
+  color: #9ca3af;
+}
+
+/* Overlay transparente para fechar o menu */
+.chat-model-selector__overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999999;
+  background: rgba(0, 0, 0, 0.5);
+  animation: fadeIn 150ms ease-out;
+}
+
+/* Menu dropdown */
+.chat-model-selector__menu {
+  position: fixed;
+  min-width: 240px;
+  max-width: 260px;
+  background: #09090b;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 1000000;
+  overflow: hidden;
+  opacity: 1;
+  animation: slideDown 200ms ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-model-selector__menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid #27272a;
+  background: #09090b;
+}
+
+.chat-model-selector__menu-header span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.chat-model-selector__menu-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chat-model-selector__menu-expand {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 150ms ease-out;
+}
+
+.chat-model-selector__menu-expand:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #4a9eff;
+}
+
+.chat-model-selector__menu-expand svg {
+  width: 14px;
+  height: 14px;
+}
+
+.chat-model-selector__menu-close {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 150ms ease-out;
+}
+
+.chat-model-selector__menu-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e5e7eb;
+}
+
+.chat-model-selector__menu-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+.chat-model-selector__menu-list {
+  padding: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.chat-model-selector__menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 150ms ease-out;
+  text-align: left;
+}
+
+.chat-model-selector__menu-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.chat-model-selector__menu-item--active {
+  background: rgba(74, 158, 255, 0.1);
+}
+
+.chat-model-selector__menu-item--active:hover {
+  background: rgba(74, 158, 255, 0.15);
+}
+
+.chat-model-selector__menu-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.chat-model-selector__menu-item-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.chat-model-selector__menu-item-provider {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.chat-model-selector__menu-item svg {
+  width: 14px;
+  height: 14px;
+  stroke: #4a9eff;
+  flex-shrink: 0;
+}
+
+/* Tema claro */
+:root[data-theme="light"] .chat-model-selector__button {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #6b7280;
+}
+
+:root[data-theme="light"] .chat-model-selector__button:hover {
+  background: #f9fafb;
+  border-color: rgba(0, 0, 0, 0.2);
+  color: #374151;
+}
+
+:root[data-theme="light"] .chat-model-selector__button svg:first-child {
+  stroke: #6b7280;
+}
+
+:root[data-theme="light"] .chat-model-selector__button svg:last-child {
+  stroke: #9ca3af;
+}
+
+:root[data-theme="light"] .chat-model-selector__text {
+  color: #6b7280;
+}
+
+:root[data-theme="light"] .chat-model-selector__menu {
+  background: #fafafa;
+  border-color: #e4e4e7;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme="light"] .chat-model-selector__menu-header {
+  background: #fafafa;
+  border-bottom-color: #e4e4e7;
+}
+
+:root[data-theme="light"] .chat-model-selector__menu-header span {
+  color: #111827;
+}
+
+:root[data-theme="light"] .chat-model-selector__menu-expand {
+  color: #6b7280;
+}
+
+:root[data-theme="light"] .chat-model-selector__menu-expand:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #4a9eff;
+}
+
+:root[data-theme="light"] .chat-model-selector__menu-close {
+  color: #6b7280;
+}
+
+:root[data-theme="light"] .chat-model-selector__menu-close:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #374151;
+}
+
+:root[data-theme="light"] .chat-model-selector__menu-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+:root[data-theme="light"] .chat-model-selector__menu-item--active {
+  background: rgba(74, 158, 255, 0.1);
+}
+
+:root[data-theme="light"] .chat-model-selector__menu-item--active:hover {
+  background: rgba(74, 158, 255, 0.15);
+}
+
+:root[data-theme="light"] .chat-model-selector__menu-item-name {
+  color: #111827;
+}
+
+:root[data-theme="light"] .chat-model-selector__menu-item-provider {
+  color: #6b7280;
+}

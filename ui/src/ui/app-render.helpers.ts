@@ -1,4 +1,4 @@
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { repeat } from "lit/directives/repeat.js";
 import type { AppViewState } from "./app-view-state";
 import type { ThemeMode } from "./theme";
@@ -38,140 +38,132 @@ export function renderTab(state: AppViewState, tab: Tab) {
   `;
 }
 
-export function renderChatControls(state: AppViewState) {
-  const mainSessionKey = resolveMainSessionKey(state.hello, state.sessionsResult);
-  const sessionOptions = resolveSessionOptions(
-    state.sessionKey,
-    state.sessionsResult,
-    mainSessionKey,
-  );
-  const disableThinkingToggle = state.onboarding;
-  const disableFocusToggle = state.onboarding;
-  const showThinking = state.onboarding ? false : state.settings.chatShowThinking;
-  const focusActive = state.onboarding ? true : state.settings.chatFocusMode;
-  // Refresh icon
-  const refreshIcon = html`
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
-      <path d="M21 3v5h-5"></path>
-    </svg>
-  `;
-  const focusIcon = html`
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <path d="M4 7V4h3"></path>
-      <path d="M20 7V4h-3"></path>
-      <path d="M4 17v3h3"></path>
-      <path d="M20 17v3h-3"></path>
-      <circle cx="12" cy="12" r="3"></circle>
-    </svg>
-  `;
+export function renderChatModelButton(state: AppViewState) {
   return html`
-    <div class="chat-controls">
-      <label class="field chat-controls__session">
-        <select
-          .value=${state.sessionKey}
-          ?disabled=${!state.connected}
-          @change=${(e: Event) => {
-            const next = (e.target as HTMLSelectElement).value;
-            state.sessionKey = next;
-            state.chatMessage = "";
-            state.chatStream = null;
-            state.chatStreamStartedAt = null;
-            state.chatRunId = null;
-            state.resetToolStream();
-            state.resetChatScroll();
-            state.applySettings({
-              ...state.settings,
-              sessionKey: next,
-              lastActiveSessionKey: next,
-            });
-            void state.loadAssistantIdentity();
-            syncUrlWithSessionKey(state, next, true);
-            void loadChatHistory(state);
-          }}
-        >
-          ${repeat(
-            sessionOptions,
-            (entry) => entry.key,
-            (entry) =>
-              html`<option value=${entry.key}>
-                ${entry.displayName ?? entry.key}
-              </option>`,
-          )}
-        </select>
-      </label>
-      <button
-        class="btn btn--sm btn--icon"
-        ?disabled=${state.chatLoading || !state.connected}
-        @click=${() => {
-          state.resetToolStream();
-          void refreshChat(state as unknown as Parameters<typeof refreshChat>[0]);
-        }}
-        title="Refresh chat data"
-      >
-        ${refreshIcon}
-      </button>
-      <span class="chat-controls__separator">|</span>
-      <button
-        class="btn btn--sm btn--icon ${showThinking ? "active" : ""}"
-        ?disabled=${disableThinkingToggle}
-        @click=${() => {
-          if (disableThinkingToggle) {
-            return;
-          }
-          state.applySettings({
-            ...state.settings,
-            chatShowThinking: !state.settings.chatShowThinking,
-          });
-        }}
-        aria-pressed=${showThinking}
-        title=${
-          disableThinkingToggle
-            ? "Disabled during onboarding"
-            : "Toggle assistant thinking/working output"
-        }
-      >
-        ${icons.brain}
-      </button>
-      <button
-        class="btn btn--sm btn--icon ${focusActive ? "active" : ""}"
-        ?disabled=${disableFocusToggle}
-        @click=${() => {
-          if (disableFocusToggle) {
-            return;
-          }
-          state.applySettings({
-            ...state.settings,
-            chatFocusMode: !state.settings.chatFocusMode,
-          });
-        }}
-        aria-pressed=${focusActive}
-        title=${
-          disableFocusToggle
-            ? "Disabled during onboarding"
-            : "Toggle focus mode (hide sidebar + page header)"
-        }
-      >
-        ${focusIcon}
-      </button>
+    <button
+      class="chat-model-selector__button"
+      @click=${(e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('[DEBUG] Model selector clicked', { 
+          hasMethod: typeof state.handleChatModelMenuToggle === 'function',
+          currentState: state.chatModelMenuOpen 
+        });
+        state.handleChatModelMenuToggle();
+      }}
+      aria-label="Select model"
+      title="Select AI model"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/>
+        <path d="M8.5 8.5v.01"/>
+        <path d="M16 15.5v.01"/>
+        <path d="M12 12v.01"/>
+        <path d="M11 17v.01"/>
+        <path d="M7 14v.01"/>
+      </svg>
+      <span class="chat-model-selector__text">${state.chatCurrentModel}</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </button>
+  `;
+}
+
+export function renderChatModelMenu(state: AppViewState) {
+  const availableModels = [
+    { id: "claude-sonnet-4.5", name: "Claude Sonnet 4.5", provider: "Anthropic" },
+    { id: "claude-opus-4", name: "Claude Opus 4", provider: "Anthropic" },
+    { id: "gpt-4o", name: "GPT-4o", provider: "OpenAI" },
+    { id: "gpt-4-turbo", name: "GPT-4 Turbo", provider: "OpenAI" },
+    { id: "gemini-2.0-flash-exp", name: "Gemini 2.0 Flash", provider: "Google" },
+    { id: "llama-3.3-70b", name: "Llama 3.3 70B", provider: "Meta" },
+  ];
+
+  console.log('[DEBUG] renderChatModelMenu called');
+  
+  // Calcular posição do menu baseado no botão
+  setTimeout(() => {
+    const button = document.querySelector('.chat-model-selector__button');
+    const menu = document.querySelector('.chat-model-selector__menu');
+    
+    if (button && menu) {
+      const rect = button.getBoundingClientRect();
+      const menuEl = menu as HTMLElement;
+      menuEl.style.top = `${rect.bottom + 8}px`;
+      menuEl.style.left = `${rect.left}px`;
+      
+      console.log('[DEBUG] Menu positioned at:', {
+        top: menuEl.style.top,
+        left: menuEl.style.left,
+        buttonRect: { top: rect.top, left: rect.left, bottom: rect.bottom }
+      });
+    }
+  }, 0);
+
+  return html`
+    <div 
+      class="chat-model-selector__overlay" 
+      @click=${() => {
+        console.log('[DEBUG] Overlay clicked');
+        state.handleChatModelMenuClose();
+      }}
+    ></div>
+    <div class="chat-model-selector__menu">
+      <div class="chat-model-selector__menu-header">
+        <span>Selecionar Modelo</span>
+        <div class="chat-model-selector__menu-header-actions">
+          <button
+            class="chat-model-selector__menu-expand"
+            @click=${() => {
+              console.log('[DEBUG] Expand button clicked - opening integrations tab');
+              state.handleChatModelMenuClose();
+              state.handleManageConnectorsIntegrations();
+            }}
+            aria-label="Manage integrations"
+            title="Gerir Integrações"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </button>
+          <button
+            class="chat-model-selector__menu-close"
+            @click=${() => {
+              console.log('[DEBUG] Close button clicked');
+              state.handleChatModelMenuClose();
+            }}
+            aria-label="Close menu"
+          >
+            ${icons.x}
+          </button>
+        </div>
+      </div>
+      <div class="chat-model-selector__menu-list">
+        ${availableModels.map(
+          (model) => html`
+            <button
+              class="chat-model-selector__menu-item ${state.chatCurrentModel === model.name ? "chat-model-selector__menu-item--active" : ""}"
+              @click=${() => {
+                console.log('[DEBUG] Model item clicked:', model.name);
+                state.handleChatModelChange(model.name);
+              }}
+            >
+              <div class="chat-model-selector__menu-item-content">
+                <span class="chat-model-selector__menu-item-name">${model.name}</span>
+                <span class="chat-model-selector__menu-item-provider">${model.provider}</span>
+              </div>
+              ${state.chatCurrentModel === model.name ? html`
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              ` : nothing}
+            </button>
+          `,
+        )}
+      </div>
     </div>
   `;
 }

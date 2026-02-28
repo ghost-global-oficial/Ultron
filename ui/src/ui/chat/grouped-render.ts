@@ -75,6 +75,12 @@ export function renderStreamingGroup(
   onOpenSidebar?: (content: string) => void,
   assistant?: AssistantIdentity,
 ) {
+  console.log('[DEBUG] renderStreamingGroup called:', {
+    textLength: text.length,
+    preview: text.substring(0, 100),
+    startedAt,
+  });
+  
   const timestamp = new Date(startedAt).toLocaleTimeString([], {
     hour: "numeric",
     minute: "2-digit",

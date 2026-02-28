@@ -231,6 +231,30 @@
         "memberInfo": { "label": "member", "detailKeys": ["userId"] },
         "emojiList": { "label": "emoji list" }
       }
+    },
+    "web_search": {
+      "icon": "search",
+      "title": "Web Search",
+      "label": "Searching",
+      "detailKeys": ["query"]
+    },
+    "web_fetch": {
+      "icon": "globe",
+      "title": "Web Fetch",
+      "label": "Fetching",
+      "detailKeys": ["url"]
+    },
+    "exe": {
+      "icon": "terminal",
+      "title": "Execute",
+      "label": "Running",
+      "detailKeys": ["command"]
+    },
+    "exec": {
+      "icon": "wrench",
+      "title": "Execute",
+      "label": "Running",
+      "detailKeys": ["command"]
     }
   }
 }

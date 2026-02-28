@@ -6,7 +6,7 @@ export const TAB_GROUPS = [
     label: "Control",
     tabs: ["overview", "channels", "instances", "sessions", "cron"],
   },
-  { label: "Agent", tabs: ["skills", "nodes"] },
+  { label: "Agent", tabs: ["agents", "skills", "nodes"] },
   { label: "Settings", tabs: ["config", "debug", "logs"] },
 ] as const;
 
@@ -17,6 +17,7 @@ export type Tab =
   | "sessions"
   | "cron"
   | "skills"
+  | "agents"
   | "nodes"
   | "chat"
   | "config"
@@ -30,6 +31,7 @@ const TAB_PATHS: Record<Tab, string> = {
   sessions: "/sessions",
   cron: "/cron",
   skills: "/skills",
+  agents: "/agents",
   nodes: "/nodes",
   chat: "/chat",
   config: "/config",
@@ -134,6 +136,8 @@ export function iconForTab(tab: Tab): IconName {
       return "loader";
     case "skills":
       return "zap";
+    case "agents":
+      return "bot";
     case "nodes":
       return "monitor";
     case "config":
@@ -161,6 +165,8 @@ export function titleForTab(tab: Tab) {
       return "Cron Jobs";
     case "skills":
       return "Skills";
+    case "agents":
+      return "Agents";
     case "nodes":
       return "Nodes";
     case "chat":
@@ -190,12 +196,14 @@ export function subtitleForTab(tab: Tab) {
       return "Schedule wakeups and recurring agent runs.";
     case "skills":
       return "Manage skill availability and API key injection.";
+    case "agents":
+      return "Gerencie seus agentes de IA e suas configurações.";
     case "nodes":
       return "Paired devices, capabilities, and command exposure.";
     case "chat":
-      return "Direct gateway chat session for quick interventions.";
+      return ""; // Removido o subtítulo - agora mostra o seletor de modelo
     case "config":
-      return "Edit ~/.openclaw/openclaw.json safely.";
+      return "Edit ~/.ultron/ultron.json safely.";
     case "debug":
       return "Gateway snapshots, events, and manual RPC calls.";
     case "logs":

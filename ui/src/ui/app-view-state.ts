@@ -54,6 +54,8 @@ export type AppViewState = {
   chatAvatarUrl: string | null;
   chatThinkingLevel: string | null;
   chatQueue: ChatQueueItem[];
+  chatModelMenuOpen: boolean;
+  chatCurrentModel: string;
   nodesLoading: boolean;
   nodes: Array<Record<string, unknown>>;
   devicesLoading: boolean;
@@ -203,4 +205,36 @@ export type AppViewState = {
   handleLogsLevelFilterToggle: (level: LogLevel) => void;
   handleLogsAutoFollowToggle: (next: boolean) => void;
   handleCallDebugMethod: (method: string, params: string) => Promise<void>;
+  // Nova barra lateral e configurações
+  settingsMenuOpen: boolean;
+  showClawbotSettings: boolean;
+  showUltronSettings: boolean;
+  settingsMenuPosition: { top: number; left: number } | null;
+  ultronSettingsData: {
+    theme: string;
+    language: string;
+    chatFocusMode: boolean;
+    chatShowThinking: boolean;
+    navCollapsed: boolean;
+    autoSave: boolean;
+    notifications: boolean;
+    soundEffects: boolean;
+  };
+  handleNewTask: () => void;
+  handleAgents: () => void;
+  handleSearch: () => void;
+  handleNewProject: () => void;
+  handleSettingsClick: (event?: MouseEvent) => void;
+  handleUltronSettings: () => void;
+  handleClawbotSettings: () => void;
+  handleCloseClawbotSettings: () => void;
+  handleCloseUltronSettings: () => void;
+  handleSettingsMenuClose: () => void;
+  handleUltronSettingChange: (key: string, value: any) => void;
+  handleSaveUltronSettings: () => void;
+  handleChatModelMenuToggle: () => void;
+  handleChatModelMenuClose: () => void;
+  handleChatModelChange: (model: string) => void;
+  handleAddConnectors: () => void;
+  handleManageConnectorsTabChange: (tab: "applications" | "custom-api" | "custom-mcp") => void;
 };

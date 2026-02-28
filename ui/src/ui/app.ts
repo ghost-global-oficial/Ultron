@@ -74,6 +74,7 @@ import { resolveInjectedAssistantIdentity } from "./assistant-identity";
 import { loadAssistantIdentity as loadAssistantIdentityInternal } from "./controllers/assistant-identity";
 import { loadSettings, type UiSettings } from "./storage";
 import { type ChatAttachment, type ChatQueueItem, type CronFormState } from "./ui-types";
+import type { Agent } from "./views/agents-page";
 
 declare global {
   interface Window {
@@ -96,8 +97,8 @@ function resolveOnboardingMode(): boolean {
   return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
 }
 
-@customElement("openclaw-app")
-export class OpenClawApp extends LitElement {
+@customElement("ultron-app")
+export class UltronApp extends LitElement {
   @state() settings: UiSettings = loadSettings();
   @state() password = "";
   @state() tab: Tab = "chat";
@@ -116,13 +117,16 @@ export class OpenClawApp extends LitElement {
   @state() assistantAvatar = injectedAssistantIdentity.avatar;
   @state() assistantAgentId = injectedAssistantIdentity.agentId ?? null;
 
-  @state() sessionKey = this.settings.sessionKey;
+  // Sempre inicia com uma nova sessão vazia para mostrar a tela de boas-vindas
+  @state() sessionKey = `agent:main:chat:${Date.now()}:${Math.random().toString(36).slice(2, 11)}`;
   @state() chatLoading = false;
   @state() chatSending = false;
   @state() chatMessage = "";
   @state() chatMessages: unknown[] = [];
   @state() chatToolMessages: unknown[] = [];
   @state() chatStream: string | null = null;
+  @state() chatModelMenuOpen = false;
+  @state() chatCurrentModel = "Claude Sonnet 4.5";
   @state() chatStreamStartedAt: number | null = null;
   @state() chatRunId: string | null = null;
   @state() compactionStatus: import("./app-tool-stream").CompactionStatus | null = null;
@@ -193,7 +197,33 @@ export class OpenClawApp extends LitElement {
   @state() presenceStatus: string | null = null;
 
   @state() agentsLoading = false;
-  @state() agentsList: AgentsListResult | null = null;
+  @state() agentsList: AgentsListResult | null = {
+    defaultId: "main",
+    mainKey: "agent:main:main",
+    scope: "gateway",
+    agents: [
+      {
+        id: "main",
+        name: "ULTRON",
+        identity: {
+          name: "ULTRON",
+          emoji: "🤖",
+          avatar: undefined,
+          avatarUrl: undefined,
+        },
+      },
+      {
+        id: "assistant",
+        name: "Assistant",
+        identity: {
+          name: "Assistant",
+          emoji: "💡",
+          avatar: undefined,
+          avatarUrl: undefined,
+        },
+      },
+    ],
+  };
   @state() agentsError: string | null = null;
 
   @state() sessionsLoading = false;
@@ -202,7 +232,10 @@ export class OpenClawApp extends LitElement {
   @state() sessionsFilterActive = "";
   @state() sessionsFilterLimit = "120";
   @state() sessionsIncludeGlobal = true;
-  @state() sessionsIncludeUnknown = false;
+  @state() sessionsIncludeUnknown = true; // Mudado para true para mostrar todas as tarefas
+  
+  // Rastrear sessões que precisam de nome automático
+  private sessionsNeedingName = new Set<string>();
 
   @state() cronLoading = false;
   @state() cronJobs: CronJob[] = [];
@@ -246,6 +279,64 @@ export class OpenClawApp extends LitElement {
   @state() logsLimit = 500;
   @state() logsMaxBytes = 250_000;
   @state() logsAtBottom = true;
+
+  // Nova barra lateral e menu de configurações
+  @state() settingsMenuOpen = false;
+  @state() showClawbotSettings = false;
+  @state() showUltronSettings = false;
+  @state() ultronSettingsSection: "account" | "scheduled-tasks" | "data-control" | "personalization" | "skills" | "connectors" | "integrations" | "help" = "personalization";
+  @state() settingsMenuPosition: { top: number; left: number } | null = null;
+  
+  // Menu de contexto das tarefas
+  @state() taskMenuOpen: string | null = null;
+  @state() taskMenuPosition: { top: number; left: number } | null = null;
+  @state() ultronSettingsData = {
+    theme: this.settings.theme ?? "system",
+    language: "pt",
+    chatFocusMode: this.settings.chatFocusMode ?? false,
+    chatShowThinking: this.settings.chatShowThinking ?? false,
+    navCollapsed: this.settings.navCollapsed ?? false,
+    autoSave: true,
+    notifications: true,
+    soundEffects: false,
+  };
+
+  // Menu de conectores
+  @state() connectorsMenuOpen = false;
+  @state() connectorsMenuPosition: { top: number; left: number } | null = null;
+  @state() connectors = [
+    { id: "chrome", name: "O Meu Navegador", icon: "chrome", enabled: true, requiresAuth: false, description: "Controle e automatize seu navegador Chrome" },
+    { id: "supabase", name: "Supabase", icon: "supabase", enabled: true, requiresAuth: false, description: "Banco de dados e autenticação em tempo real" },
+    { id: "github", name: "GitHub", icon: "github", enabled: false, requiresAuth: true, description: "Integre com repositórios e issues do GitHub" },
+    { id: "gmail", name: "Gmail", icon: "gmail", enabled: false, requiresAuth: true, description: "Acesse e gerencie seus e-mails do Gmail" },
+    { id: "outlook", name: "Outlook Mail", icon: "outlook", enabled: false, requiresAuth: true, description: "Acesse e gerencie seus e-mails do Outlook" },
+    { id: "calendar", name: "Google Calendar", icon: "calendar", enabled: false, requiresAuth: true, description: "Gerencie seus eventos e compromissos" },
+  ];
+
+  // Modal de gerenciamento de conectores
+  @state() manageConnectorsModalOpen = false;
+  @state() manageConnectorsSearchQuery = "";
+  @state() manageConnectorsActiveTab: "applications" | "custom-api" | "custom-mcp" = "applications";
+  @state() connectorApps = [
+    { id: "gmail", name: "Gmail", description: "Acesse e gerencie seus e-mails do Gmail", icon: "gmail", enabled: false, category: "recommended" as const },
+    { id: "calendar", name: "Google Calendar", description: "Gerencie seus eventos e compromissos", icon: "calendar", enabled: false, category: "recommended" as const },
+    { id: "drive", name: "Google Drive", description: "Acesse e gerencie seus arquivos no Drive", icon: "drive", enabled: false, category: "recommended" as const },
+    { id: "outlook", name: "Outlook Mail", description: "Acesse e gerencie seus e-mails do Outlook", icon: "outlook", enabled: false, category: "applications" as const },
+    { id: "github", name: "GitHub", description: "Integre com repositórios e issues do GitHub", icon: "github", enabled: false, category: "applications" as const },
+    { id: "slack", name: "Slack", description: "Conecte-se aos seus workspaces do Slack", icon: "slack", enabled: false, category: "applications" as const },
+    { id: "notion", name: "Notion", description: "Acesse e edite suas páginas do Notion", icon: "notion", enabled: false, category: "applications" as const },
+  ];
+
+  // Menu de configurações de conectores
+  @state() manageConnectorsSettingsOpen = false;
+  @state() manageConnectorsSettingsSection: "account" | "scheduled-tasks" | "data-control" | "personalization" | "skills" | "connectors" | "integrations" | "help" = "connectors";
+
+  // Painel de agendamento de tarefas
+  @state() scheduleTaskPanelOpen = false;
+  @state() scheduleTaskSelectedDate: Date | null = null;
+  @state() scheduleTaskSelectedTime = "09:00";
+  @state() scheduleTaskRepeatType: "once" | "daily" | "weekly" | "monthly" = "once";
+  @state() scheduleTaskRepeatCount = 1;
 
   client: GatewayBrowserClient | null = null;
   private chatScrollFrame: number | null = null;
@@ -352,11 +443,64 @@ export class OpenClawApp extends LitElement {
       id,
     );
   }
+  
+  // Gera um nome descritivo para a tarefa baseado na primeira mensagem
+  private async generateTaskName(sessionKey: string, firstMessage: string): Promise<string> {
+    // Limitar a mensagem a 100 caracteres para o nome
+    const truncated = firstMessage.trim().substring(0, 100);
+    
+    // Remover quebras de linha e múltiplos espaços
+    const cleaned = truncated.replace(/\s+/g, ' ');
+    
+    // Se a mensagem for muito curta, usar ela inteira
+    if (cleaned.length <= 50) {
+      return cleaned;
+    }
+    
+    // Caso contrário, tentar encontrar um ponto de quebra natural
+    const breakPoints = ['. ', '? ', '! ', ', '];
+    for (const breakPoint of breakPoints) {
+      const index = cleaned.indexOf(breakPoint);
+      if (index > 20 && index < 50) {
+        return cleaned.substring(0, index + 1).trim();
+      }
+    }
+    
+    // Se não encontrar ponto de quebra, truncar em 50 caracteres
+    return cleaned.substring(0, 50).trim() + '...';
+  }
+  
+  // Atualiza o label da sessão
+  private async updateSessionLabel(sessionKey: string, label: string) {
+    if (!this.client || !this.connected) {
+      return;
+    }
+    
+    try {
+      await this.client.request('sessions.patch', {
+        key: sessionKey,
+        label: label,
+      });
+      
+      // Recarregar a lista de sessões para mostrar o novo nome
+      await loadSessions(this);
+    } catch (error) {
+      console.error('[DEBUG] Error updating session label:', error);
+    }
+  }
 
   async handleSendChat(
     messageOverride?: string,
     opts?: Parameters<typeof handleSendChatInternal>[2],
   ) {
+    // Marcar esta sessão como precisando de nome se for uma nova tarefa sem label
+    const session = this.sessionsResult?.sessions?.find(s => s.key === this.sessionKey);
+    const isNewTask = this.sessionKey.startsWith('agent:main:chat:') && !session?.label;
+    
+    if (isNewTask && !this.sessionsNeedingName.has(this.sessionKey)) {
+      this.sessionsNeedingName.add(this.sessionKey);
+    }
+    
     await handleSendChatInternal(
       this as unknown as Parameters<typeof handleSendChatInternal>[0],
       messageOverride,
@@ -476,6 +620,319 @@ export class OpenClawApp extends LitElement {
     const newRatio = Math.max(0.4, Math.min(0.7, ratio));
     this.splitRatio = newRatio;
     this.applySettings({ ...this.settings, splitRatio: newRatio });
+  }
+
+  // Métodos da nova barra lateral
+  handleNewTask() {
+    // Gera uma nova chave de sessão no formato correto: agent:main:chat:timestamp:randomId
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).slice(2, 11);
+    const newSessionKey = `agent:main:chat:${timestamp}:${randomId}`;
+    
+    // Limpa o estado do chat
+    this.sessionKey = newSessionKey;
+    this.chatMessage = "";
+    this.chatMessages = [];
+    this.chatToolMessages = [];
+    this.chatAttachments = [];
+    this.chatStream = null;
+    this.chatStreamStartedAt = null;
+    this.chatRunId = null;
+    this.chatQueue = [];
+    this.resetToolStream();
+    
+    // Atualiza as configurações
+    this.applySettings({
+      ...this.settings,
+      sessionKey: newSessionKey,
+      lastActiveSessionKey: newSessionKey,
+    });
+    
+    // Carrega a identidade do assistente
+    void this.loadAssistantIdentity();
+    
+    // Navega para a aba de chat se não estiver nela
+    if (this.tab !== "chat") {
+      this.setTab("chat");
+    }
+  }
+
+  handleAgents() {
+    this.setTab("agents");
+  }
+
+  handleCreateAgent() {
+    // TODO: Implementar criação de agent
+    console.log("Create agent clicked");
+  }
+
+  handleEditAgent(id: string) {
+    // TODO: Implementar edição de agent
+    console.log("Edit agent:", id);
+  }
+
+  handleDeleteAgent(id: string) {
+    // TODO: Implementar exclusão de agent
+    console.log("Delete agent:", id);
+  }
+
+  handleToggleAgent(id: string) {
+    // TODO: Implementar toggle de agent
+    console.log("Toggle agent:", id);
+  }
+
+  handleSearch() {
+    // TODO: Implementar busca
+    console.log("Search clicked");
+  }
+
+  handleNewProject() {
+    // TODO: Implementar novo projeto
+    console.log("New project clicked");
+  }
+
+  handleSettingsClick(event?: MouseEvent) {
+    if (event && event.currentTarget instanceof HTMLElement) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      this.settingsMenuPosition = {
+        top: rect.top,
+        left: rect.right + 8,
+      };
+    }
+    this.settingsMenuOpen = !this.settingsMenuOpen;
+  }
+
+  handleCloseUltronSettings() {
+    this.showUltronSettings = false;
+  }
+  
+  handleUltronSettingsSection(section: "account" | "scheduled-tasks" | "data-control" | "personalization" | "skills" | "connectors" | "integrations" | "help") {
+    this.ultronSettingsSection = section;
+  }
+
+  handleUltronSettingChange(key: string, value: any) {
+    this.ultronSettingsData = {
+      ...this.ultronSettingsData,
+      [key]: value,
+    };
+  }
+
+  handleSaveUltronSettings() {
+    // Aplicar configurações
+    this.applySettings({
+      ...this.settings,
+      theme: this.ultronSettingsData.theme as ThemeMode,
+      chatFocusMode: this.ultronSettingsData.chatFocusMode,
+      chatShowThinking: this.ultronSettingsData.chatShowThinking,
+      navCollapsed: this.ultronSettingsData.navCollapsed,
+    });
+    
+    // Fechar modal
+    this.showUltronSettings = false;
+  }
+
+  handleClawbotSettings() {
+    this.settingsMenuOpen = false;
+    this.showClawbotSettings = true;
+  }
+
+  handleCloseClawbotSettings() {
+    this.showClawbotSettings = false;
+  }
+
+  handleSettingsMenuClose() {
+    this.settingsMenuOpen = false;
+  }
+
+  handleTaskMenuOpen(event: MouseEvent, sessionKey: string) {
+    const button = event.currentTarget as HTMLElement;
+    const rect = button.getBoundingClientRect();
+    this.taskMenuPosition = {
+      top: rect.bottom + 4,
+      left: rect.left,
+    };
+    this.taskMenuOpen = sessionKey;
+  }
+
+  handleTaskMenuClose() {
+    this.taskMenuOpen = null;
+    this.taskMenuPosition = null;
+  }
+
+  handlePinTask(sessionKey: string) {
+    // TODO: Implementar fixar tarefa
+    console.log("Pin task:", sessionKey);
+  }
+
+  handleDeleteTask(sessionKey: string) {
+    // TODO: Implementar deletar tarefa
+    console.log("Delete task:", sessionKey);
+  }
+
+  handleArchiveTask(sessionKey: string) {
+    // TODO: Implementar arquivar tarefa
+    console.log("Archive task:", sessionKey);
+  }
+
+  handleRenameTask(sessionKey: string) {
+    // TODO: Implementar renomear tarefa
+    console.log("Rename task:", sessionKey);
+  }
+
+  handleShareTask(sessionKey: string) {
+    // TODO: Implementar partilhar tarefa
+    console.log("Share task:", sessionKey);
+  }
+
+  handleConnectorsMenuOpen(event: MouseEvent) {
+    const button = event.currentTarget as HTMLElement;
+    const rect = button.getBoundingClientRect();
+    this.connectorsMenuPosition = {
+      top: rect.bottom + 8, // Posiciona abaixo do botão
+      left: rect.left,
+    };
+    this.connectorsMenuOpen = true;
+  }
+
+  handleConnectorsMenuClose() {
+    this.connectorsMenuOpen = false;
+  }
+
+  handleToggleConnector(id: string) {
+    this.connectors = this.connectors.map((c) =>
+      c.id === id ? { ...c, enabled: !c.enabled } : c
+    );
+  }
+
+  handleConnectConnector(id: string) {
+    // TODO: Implementar lógica de autenticação
+    console.log("Connect connector:", id);
+    // Por enquanto, apenas habilita o conector
+    this.connectors = this.connectors.map((c) =>
+      c.id === id ? { ...c, enabled: true } : c
+    );
+  }
+
+  handleAddConnectors() {
+    this.connectorsMenuOpen = false;
+    this.manageConnectorsModalOpen = true;
+  }
+
+  handleManageConnectors() {
+    this.connectorsMenuOpen = false;
+    this.manageConnectorsSettingsOpen = true;
+  }
+
+  handleManageConnectorsIntegrations() {
+    this.connectorsMenuOpen = false;
+    this.manageConnectorsSettingsOpen = true;
+    this.manageConnectorsSettingsSection = "integrations";
+  }
+
+  handleManageConnectorsSettingsClose() {
+    this.manageConnectorsSettingsOpen = false;
+  }
+
+  handleManageConnectorsSettingsSection(section: "account" | "scheduled-tasks" | "data-control" | "personalization" | "skills" | "connectors" | "integrations" | "help") {
+    this.manageConnectorsSettingsSection = section;
+  }
+
+  handleConnectorSettingsClick(id: string) {
+    // Fecha o modal de gerenciamento
+    this.manageConnectorsSettingsOpen = false;
+    
+    // Encontra o conector
+    const connector = this.connectors.find(c => c.id === id);
+    if (!connector) {
+      console.error("Connector not found:", id);
+      return;
+    }
+    
+    // Se o conector requer autenticação e não está habilitado, abre o modal de adicionar
+    if (connector.requiresAuth && !connector.enabled) {
+      this.manageConnectorsModalOpen = true;
+      return;
+    }
+    
+    // Se já está habilitado, mostra opções de configuração
+    console.log("Opening settings for connector:", connector.name);
+    // TODO: Abrir modal de configurações específicas do conector
+  }
+
+  handleManageConnectorsClose() {
+    this.manageConnectorsModalOpen = false;
+    this.manageConnectorsSearchQuery = "";
+  }
+
+  handleManageConnectorsSearchChange(query: string) {
+    this.manageConnectorsSearchQuery = query;
+  }
+
+  handleManageConnectorsTabChange(tab: "applications" | "custom-api" | "custom-mcp") {
+    this.manageConnectorsActiveTab = tab;
+  }
+
+  handleToggleConnectorApp(id: string) {
+    this.connectorApps = this.connectorApps.map((c) =>
+      c.id === id ? { ...c, enabled: !c.enabled } : c
+    );
+  }
+
+  handleOpenScheduleTask() {
+    this.scheduleTaskPanelOpen = true;
+  }
+
+  handleCloseScheduleTask() {
+    this.scheduleTaskPanelOpen = false;
+  }
+
+  handleScheduleTaskDateSelect(date: Date) {
+    this.scheduleTaskSelectedDate = date;
+  }
+
+  handleScheduleTaskTimeChange(time: string) {
+    this.scheduleTaskSelectedTime = time;
+  }
+
+  handleScheduleTaskRepeatTypeChange(type: "once" | "daily" | "weekly" | "monthly") {
+    this.scheduleTaskRepeatType = type;
+  }
+
+  handleScheduleTaskRepeatCountChange(count: number) {
+    this.scheduleTaskRepeatCount = count;
+  }
+
+  handleScheduleTask() {
+    // TODO: Implementar lógica de agendamento
+    console.log("Schedule task:", {
+      date: this.scheduleTaskSelectedDate,
+      time: this.scheduleTaskSelectedTime,
+      repeatType: this.scheduleTaskRepeatType,
+      repeatCount: this.scheduleTaskRepeatCount,
+    });
+    this.scheduleTaskPanelOpen = false;
+  }
+
+  handleChatModelMenuToggle() {
+    console.log('[DEBUG] handleChatModelMenuToggle called, current state:', this.chatModelMenuOpen);
+    this.chatModelMenuOpen = !this.chatModelMenuOpen;
+    console.log('[DEBUG] New state:', this.chatModelMenuOpen);
+    this.requestUpdate();
+  }
+
+  handleChatModelMenuClose() {
+    console.log('[DEBUG] handleChatModelMenuClose called');
+    this.chatModelMenuOpen = false;
+    this.requestUpdate();
+  }
+
+  handleChatModelChange(model: string) {
+    console.log('[DEBUG] handleChatModelChange called with:', model);
+    this.chatCurrentModel = model;
+    this.chatModelMenuOpen = false;
+    this.requestUpdate();
+    // TODO: Implementar mudança de modelo no backend
+    console.log("Model changed to:", model);
   }
 
   render() {

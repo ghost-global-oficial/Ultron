@@ -1,22 +1,34 @@
-/* Tool Card Styles */
+/* Tool Card Styles - Estilo moderno compacto com largura automática */
 .chat-tool-card {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px;
-  margin-top: 8px;
-  background: var(--card);
-  box-shadow: inset 0 1px 0 var(--card-highlight);
-  transition:
-    border-color 150ms ease-out,
-    background 150ms ease-out;
-  /* Fixed max-height to ensure cards don't expand too much */
-  max-height: 120px;
-  overflow: hidden;
+  border: 1px solid #333333 !important;
+  border-radius: 9999px !important; /* Bordas completamente arredondadas (pill shape) */
+  padding: 6px 12px !important; /* Menor */
+  margin-top: 6px;
+  background: #1a1a1a !important;
+  transition: all 150ms ease-out;
+  max-height: none;
+  overflow: visible;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px; /* Gap menor */
+  width: auto; /* Largura automática */
+  max-width: fit-content; /* Ajusta ao conteúdo */
+}
+
+/* Error state for tool cards */
+.chat-tool-card--error {
+  border-color: #dc2626 !important; /* red-600 */
+  background: #1a0f0f !important; /* dark red tint */
+}
+
+.chat-tool-card--error:hover {
+  background: #2a1515 !important;
+  border-color: #ef4444 !important; /* red-500 */
 }
 
 .chat-tool-card:hover {
-  border-color: var(--border-strong);
-  background: var(--bg-hover);
+  background: #252525 !important;
+  border-color: #444444 !important;
 }
 
 /* First tool card in a group - no top margin */
@@ -33,125 +45,125 @@
   outline-offset: 2px;
 }
 
-/* Header with title and chevron */
+/* Header with title and chevron - inline */
 .chat-tool-card__header {
-  display: flex;
-  justify-content: space-between;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .chat-tool-card__title {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-weight: 600;
-  font-size: 13px;
-  line-height: 1.2;
+  gap: 8px; /* Gap menor */
+  font-weight: 500;
+  font-size: 13px; /* Texto menor */
+  line-height: 1.4;
+  color: #d1d5db; /* text-gray-300 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
 }
 
+/* Ícone com fundo destacado - menor */
 .chat-tool-card__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 24px; /* Menor */
+  height: 24px; /* Menor */
   flex-shrink: 0;
+  background: #2a2a2a;
+  border: 1px solid #444444;
+  border-radius: 6px;
+  padding: 4px; /* Padding menor */
+  transition: all 150ms ease-out;
+}
+
+.chat-tool-card:hover .chat-tool-card__icon {
+  background: #333333;
+  border-color: #555555;
 }
 
 .chat-tool-card__icon svg {
-  width: 14px;
-  height: 14px;
-  stroke: currentColor;
+  width: 14px; /* Ícone menor */
+  height: 14px; /* Ícone menor */
+  stroke: #9ca3af; /* text-gray-400 */
   fill: none;
   stroke-width: 1.5px;
   stroke-linecap: round;
   stroke-linejoin: round;
+  transition: stroke 150ms ease-out;
 }
 
-/* "View >" action link */
+.chat-tool-card:hover .chat-tool-card__icon svg {
+  stroke: #ffffff;
+}
+
+/* Error icon styling */
+.chat-tool-card--error .chat-tool-card__icon {
+  background: #2a1515;
+  border-color: #dc2626;
+}
+
+.chat-tool-card--error:hover .chat-tool-card__icon {
+  background: #3a1a1a;
+  border-color: #ef4444;
+}
+
+.chat-tool-card--error .chat-tool-card__icon svg {
+  stroke: #ef4444;
+}
+
+.chat-tool-card--error:hover .chat-tool-card__icon svg {
+  stroke: #f87171; /* red-400 */
+}
+
+/* Error title styling */
+.chat-tool-card--error .chat-tool-card__title {
+  color: #fca5a5; /* red-300 */
+}
+
+/* "View >" action link - oculto */
 .chat-tool-card__action {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--accent);
-  opacity: 0.8;
-  transition: opacity 150ms ease-out;
+  display: none;
 }
 
-.chat-tool-card__action svg {
-  width: 12px;
-  height: 12px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.5px;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+/* Error action styling */
+.chat-tool-card__action--error {
+  color: #ef4444 !important;
 }
 
-.chat-tool-card--clickable:hover .chat-tool-card__action {
-  opacity: 1;
-}
-
-/* Status indicator for completed/empty results */
+/* Status indicator - oculto */
 .chat-tool-card__status {
-  display: inline-flex;
-  align-items: center;
-  color: var(--ok);
+  display: none;
 }
 
-.chat-tool-card__status svg {
-  width: 14px;
-  height: 14px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 2px;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+/* Error status styling */
+.chat-tool-card__status--error svg {
+  stroke: #ef4444 !important;
 }
 
 .chat-tool-card__status-text {
-  font-size: 11px;
-  margin-top: 4px;
+  display: none;
 }
 
 .chat-tool-card__detail {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 4px;
+  display: none;
 }
 
-/* Collapsed preview - fixed height with truncation */
+/* Collapsed preview - oculto */
 .chat-tool-card__preview {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 8px;
-  padding: 8px 10px;
-  background: var(--secondary);
-  border-radius: var(--radius-md);
-  white-space: pre-wrap;
-  overflow: hidden;
-  max-height: 44px;
-  line-height: 1.4;
-  border: 1px solid var(--border);
+  display: none;
 }
 
-.chat-tool-card--clickable:hover .chat-tool-card__preview {
-  background: var(--bg-hover);
-  border-color: var(--border-strong);
-}
-
-/* Short inline output */
+/* Short inline output - oculto */
 .chat-tool-card__inline {
-  font-size: 11px;
-  color: var(--text);
-  margin-top: 6px;
-  padding: 6px 8px;
-  background: var(--secondary);
-  border-radius: var(--radius-sm);
-  white-space: pre-wrap;
-  word-break: break-word;
+  display: none;
 }
 
 /* Reading Indicator */
@@ -160,6 +172,39 @@
   border: 1px solid var(--border);
   padding: 12px;
   display: inline-flex;
+}
+
+/* Light mode overrides */
+:root[data-theme="light"] .chat-tool-card {
+  border-color: #e5e7eb; /* border-gray-200 */
+  background: #f9fafb; /* bg-gray-50 */
+}
+
+:root[data-theme="light"] .chat-tool-card:hover {
+  border-color: #d1d5db; /* border-gray-300 */
+  background: #f3f4f6; /* bg-gray-100 */
+}
+
+:root[data-theme="light"] .chat-tool-card__title {
+  color: #374151; /* text-gray-700 */
+}
+
+:root[data-theme="light"] .chat-tool-card__icon {
+  background: #ffffff;
+  border-color: #e5e7eb;
+}
+
+:root[data-theme="light"] .chat-tool-card:hover .chat-tool-card__icon {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+:root[data-theme="light"] .chat-tool-card__icon svg {
+  stroke: #6b7280; /* text-gray-500 */
+}
+
+:root[data-theme="light"] .chat-tool-card:hover .chat-tool-card__icon svg {
+  stroke: #111827; /* text-gray-900 */
 }
 
 .chat-reading-indicator__dots {
@@ -199,4 +244,106 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+/* ===================================================
+   OCULTAR BLOCOS DE CÓDIGO BASH/SHELL
+   =================================================== */
+
+/* Ocultar blocos de código com linguagem bash/shell */
+.chat-text pre code[class*="language-bash"],
+.chat-text pre code[class*="language-shell"],
+.chat-text pre code[class*="language-sh"],
+.chat-text pre code[class*="lang-bash"],
+.chat-text pre code[class*="lang-shell"],
+.chat-text pre code[class*="lang-sh"] {
+  display: none !important;
+}
+
+/* Ocultar o pre que contém esses códigos */
+.chat-text pre:has(code[class*="language-bash"]),
+.chat-text pre:has(code[class*="language-shell"]),
+.chat-text pre:has(code[class*="language-sh"]),
+.chat-text pre:has(code[class*="lang-bash"]),
+.chat-text pre:has(code[class*="lang-shell"]),
+.chat-text pre:has(code[class*="lang-sh"]) {
+  display: none !important;
+}
+
+/* Ocultar blocos de código sem linguagem especificada (geralmente comandos) */
+.chat-text pre code:not([class*="language-"]):not([class*="lang-"]) {
+  display: none !important;
+}
+
+/* Ocultar o pre que contém código sem classe */
+.chat-text pre:has(code:not([class])) {
+  display: none !important;
+}
+
+/* ===================================================
+   OCULTAR MENSAGENS TÉCNICAS E ERROS JSON
+   =================================================== */
+
+/* Ocultar blocos JSON com erros/status */
+.chat-text pre code[class*="language-json"],
+.chat-text pre code[class*="lang-json"] {
+  display: none !important;
+}
+
+.chat-text pre:has(code[class*="language-json"]),
+.chat-text pre:has(code[class*="lang-json"]) {
+  display: none !important;
+}
+
+/* Ocultar texto "(no output)" */
+.chat-text:has-text("(no output)") {
+  display: none !important;
+}
+
+/* Ocultar parágrafos que contêm apenas "(no output)" */
+.chat-text p {
+  &:has-text("(no output)") {
+    display: none !important;
+  }
+}
+
+/* Ocultar cards com label "Running" duplicados */
+.chat-tool-card:has(.chat-tool-card__title:has-text("Running")) ~ .chat-tool-card:has(.chat-tool-card__title:has-text("Running")) {
+  display: none !important;
+}
+
+
+/* ===================================================
+   OCULTAR TODOS OS BLOCOS PRE POR PADRÃO
+   =================================================== */
+
+/* Ocultar todos os blocos pre (código) por padrão */
+.chat-text pre {
+  display: none !important;
+}
+
+/* Mostrar apenas código de linguagens de programação úteis */
+.chat-text pre:has(code[class*="language-python"]),
+.chat-text pre:has(code[class*="language-javascript"]),
+.chat-text pre:has(code[class*="language-typescript"]),
+.chat-text pre:has(code[class*="language-java"]),
+.chat-text pre:has(code[class*="language-c++"]),
+.chat-text pre:has(code[class*="language-csharp"]),
+.chat-text pre:has(code[class*="language-go"]),
+.chat-text pre:has(code[class*="language-rust"]),
+.chat-text pre:has(code[class*="language-php"]),
+.chat-text pre:has(code[class*="language-ruby"]),
+.chat-text pre:has(code[class*="language-swift"]),
+.chat-text pre:has(code[class*="language-kotlin"]),
+.chat-text pre:has(code[class*="language-html"]),
+.chat-text pre:has(code[class*="language-css"]),
+.chat-text pre:has(code[class*="language-sql"]),
+.chat-text pre:has(code[class*="lang-python"]),
+.chat-text pre:has(code[class*="lang-javascript"]),
+.chat-text pre:has(code[class*="lang-typescript"]),
+.chat-text pre:has(code[class*="lang-java"]),
+.chat-text pre:has(code[class*="lang-html"]),
+.chat-text pre:has(code[class*="lang-css"]),
+.chat-text pre:has(code[class*="lang-sql"]) {
+  display: block !important;
 }

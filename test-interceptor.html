@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test WebSocket Interceptor</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #0f0;
+            padding: 20px;
+        }
+        .log {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { color: #0f0; }
+        .error { color: #f44; }
+        .info { color: #0af; }
+        button {
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #444;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 WebSocket Interceptor Test</h1>
+    <p>This page tests if the WebSocket interceptor correctly fixes protocol version.</p>
+    
+    <button onclick="testInterceptor()">Test Interceptor</button>
+    <button onclick="testConnection()">Test Gateway Connection</button>
+    <button onclick="clearLogs()">Clear Logs</button>
+    
+    <div id="logs"></div>
+    
+    <script>
+        // INTERCEPTOR CODE (same as in main.js)
+        console.log('🚀 ULTRON: Installing WebSocket interceptor...');
+        
+        (function() {
+          const OriginalWebSocket = window.WebSocket;
+          window.WebSocket = function(url, protocols) {
+            log('🔧 Intercepting WebSocket connection to ' + url, 'info');
+            const ws = new OriginalWebSocket(url, protocols);
+            
+            // Interceptar send para corrigir protocolo
+            const originalSend = ws.send;
+            ws.send = function(data) {
+              log('📤 WebSocket sending: ' + data, 'info');
+              
+              try {
+                const parsed = JSON.parse(data);
+                
+                // Corrigir versão do protocolo e client ID
+                if (parsed.type === 'req' && parsed.method === 'connect') {
+                  log('🔧 Found connect request, fixing protocol version', 'info');
+                  log('   Current minProtocol: ' + parsed.params?.minProtocol, 'info');
+                  log('   Current maxProtocol: ' + parsed.params?.maxProtocol, 'info');
+                  log('   Current client.id: ' + parsed.params?.client?.id, 'info');
+                  
+                  parsed.params = parsed.params || {};
+                  parsed.params.minProtocol = 3;
+                  parsed.params.maxProtocol = 3;
+                  
+                  // Garantir que o client ID seja 'cli'
+                  if (parsed.params.client) {
+                    parsed.params.client.id = 'cli';
+                    parsed.params.client.mode = 'cli';
+                  }
+                  
+                  data = JSON.stringify(parsed);
+                  log('✓ Protocol fixed to v3 and client set to CLI!', 'success');
+                  log('📤 Sending fixed data: ' + data, 'info');
+                }
+              } catch (e) {
+                log('⚠️ Not JSON data, sending as-is', 'info');
+              }
+              
+              return originalSend.call(this, data);
+            };
+            
+            return ws;
+          };
+          log('✓ WebSocket interceptor installed', 'success');
+        })();
+        
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const entry = document.createElement('div');
+            entry.className = 'log ' + type;
+            entry.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+            logs.appendChild(entry);
+            logs.scrollTop = logs.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+        
+        function testInterceptor() {
+            log('=== Testing Interceptor ===', 'info');
+            
+            // Criar um WebSocket de teste (não vai conectar, só testar o interceptor)
+            try {
+                const ws = new WebSocket('ws://localhost:18789');
+                
+                ws.onopen = () => {
+                    log('✓ WebSocket opened', 'success');
+                    
+                    // Simular uma mensagem de connect com protocolo v1
+                    const testMessage = {
+                        type: 'req',
+                        method: 'connect',
+                        id: '123',
+                        params: {
+                            minProtocol: 1,  // Versão errada!
+                            maxProtocol: 1,  // Versão errada!
+                            client: {
+                                id: 'openclaw-control-ui',  // ID que pode ter restrições
+                                version: '1.0.0',
+                                platform: 'win32',
+                                mode: 'ui'
+                            },
+                            auth: { token: 'test-token' }
+                        }
+                    };
+                    
+                    log('Sending test connect message with protocol v1...', 'info');
+                    ws.send(JSON.stringify(testMessage));
+                };
+                
+                ws.onerror = (error) => {
+                    log('❌ WebSocket error: ' + error, 'error');
+                };
+                
+                ws.onclose = (event) => {
+                    log('🔌 WebSocket closed: ' + event.code + ' - ' + event.reason, 'info');
+                };
+                
+            } catch (error) {
+                log('❌ Error creating WebSocket: ' + error.message, 'error');
+            }
+        }
+        
+        function testConnection() {
+            log('=== Testing Gateway Connection ===', 'info');
+            
+            // Carregar token do localStorage (se existir)
+            const settings = localStorage.getItem('openclaw.control.settings.v1');
+            let token = 'test-token';
+            
+            if (settings) {
+                try {
+                    const parsed = JSON.parse(settings);
+                    token = parsed.token || token;
+                    log('✓ Token loaded from localStorage', 'success');
+                } catch (e) {
+                    log('⚠️ Could not parse localStorage settings', 'info');
+                }
+            }
+            
+            const ws = new WebSocket('ws://localhost:18789');
+            
+            ws.onopen = () => {
+                log('✓ Connected to gateway', 'success');
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    log('📨 Received: ' + message.type + ' - ' + (message.event || message.method || 'unknown'), 'info');
+                    
+                    // Se for um desafio, responder
+                    if (message.type === 'event' && message.event === 'connect.challenge') {
+                        log('🔐 Challenge received, sending connect request...', 'info');
+                        
+                        const response = {
+                            type: 'req',
+                            method: 'connect',
+                            id: Date.now().toString(),
+                            params: {
+                                minProtocol: 1,  // Interceptor vai corrigir para 3!
+                                maxProtocol: 1,  // Interceptor vai corrigir para 3!
+                                client: {
+                                    id: 'openclaw-control-ui',  // Interceptor vai mudar para 'cli'!
+                                    displayName: 'Test Client',
+                                    version: '1.0.0',
+                                    platform: 'win32',
+                                    mode: 'ui'  // Interceptor vai mudar para 'cli'!
+                                },
+                                caps: [],
+                                commands: [],
+                                auth: { token: token },
+                                role: 'operator',
+                                scopes: ['operator.admin']
+                            }
+                        };
+                        
+                        ws.send(JSON.stringify(response));
+                    }
+                    
+                    // Se for sucesso na conexão
+                    if (message.type === 'res' && message.ok) {
+                        log('✅ AUTHENTICATION SUCCESSFUL!', 'success');
+                        log('Protocol version: ' + message.payload?.protocol, 'success');
+                        ws.close();
+                    }
+                    
+                } catch (e) {
+                    log('⚠️ Could not parse message: ' + e.message, 'error');
+                }
+            };
+            
+            ws.onerror = (error) => {
+                log('❌ Connection error', 'error');
+            };
+            
+            ws.onclose = (event) => {
+                if (event.code === 4008) {
+                    log('❌ Authentication failed (code 4008)', 'error');
+                } else if (event.code === 1000) {
+                    log('✓ Connection closed normally', 'success');
+                } else {
+                    log('🔌 Connection closed: ' + event.code + ' - ' + event.reason, 'info');
+                }
+            };
+        }
+    </script>
+</body>
+</html>

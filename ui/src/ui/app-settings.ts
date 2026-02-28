@@ -1,4 +1,4 @@
-import type { OpenClawApp } from "./app";
+import type { UltronApp } from "./app";
 import { refreshChat } from "./app-chat";
 import {
   startLogsPolling,
@@ -280,6 +280,7 @@ export function syncTabWithLocation(host: SettingsHost, replace: boolean) {
   if (typeof window === "undefined") {
     return;
   }
+  
   const resolved = tabFromPath(window.location.pathname, host.basePath) ?? "chat";
   setTabFromRoute(host, resolved);
   syncUrlWithTab(host, resolved, replace);
@@ -370,26 +371,26 @@ export function syncUrlWithSessionKey(host: SettingsHost, sessionKey: string, re
 
 export async function loadOverview(host: SettingsHost) {
   await Promise.all([
-    loadChannels(host as unknown as OpenClawApp, false),
-    loadPresence(host as unknown as OpenClawApp),
-    loadSessions(host as unknown as OpenClawApp),
-    loadCronStatus(host as unknown as OpenClawApp),
-    loadDebug(host as unknown as OpenClawApp),
+    loadChannels(host as unknown as UltronApp, false),
+    loadPresence(host as unknown as UltronApp),
+    loadSessions(host as unknown as UltronApp),
+    loadCronStatus(host as unknown as UltronApp),
+    loadDebug(host as unknown as UltronApp),
   ]);
 }
 
 export async function loadChannelsTab(host: SettingsHost) {
   await Promise.all([
-    loadChannels(host as unknown as OpenClawApp, true),
-    loadConfigSchema(host as unknown as OpenClawApp),
-    loadConfig(host as unknown as OpenClawApp),
+    loadChannels(host as unknown as UltronApp, true),
+    loadConfigSchema(host as unknown as UltronApp),
+    loadConfig(host as unknown as UltronApp),
   ]);
 }
 
 export async function loadCron(host: SettingsHost) {
   await Promise.all([
-    loadChannels(host as unknown as OpenClawApp, false),
-    loadCronStatus(host as unknown as OpenClawApp),
-    loadCronJobs(host as unknown as OpenClawApp),
+    loadChannels(host as unknown as UltronApp, false),
+    loadCronStatus(host as unknown as UltronApp),
+    loadCronJobs(host as unknown as UltronApp),
   ]);
 }

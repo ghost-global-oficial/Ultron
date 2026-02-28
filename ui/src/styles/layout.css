@@ -6,20 +6,29 @@
   --shell-pad: 16px;
   --shell-gap: 16px;
   --shell-nav-width: 220px;
+  --shell-new-sidebar-width: 280px;
   --shell-topbar-height: 56px;
   --shell-focus-duration: 200ms;
   --shell-focus-ease: var(--ease-out);
   height: 100vh;
   display: grid;
-  grid-template-columns: var(--shell-nav-width) minmax(0, 1fr);
+  grid-template-columns: var(--shell-new-sidebar-width) minmax(0, 1fr);
   grid-template-rows: var(--shell-topbar-height) 1fr;
   grid-template-areas:
     "topbar topbar"
-    "nav content";
+    "new-sidebar content";
   gap: 0;
   animation: dashboard-enter 0.4s var(--ease-out);
   transition: grid-template-columns var(--shell-focus-duration) var(--shell-focus-ease);
   overflow: hidden;
+}
+
+/* Quando mostra configurações do Clawbot, substitui a primeira barra pela segunda */
+.shell--show-clawbot-settings {
+  grid-template-columns: var(--shell-nav-width) minmax(0, 1fr);
+  grid-template-areas:
+    "topbar topbar"
+    "nav content";
 }
 
 @supports (height: 100dvh) {
@@ -41,10 +50,18 @@
 }
 
 .shell--nav-collapsed {
+  grid-template-columns: var(--shell-new-sidebar-width) minmax(0, 1fr);
+}
+
+.shell--nav-collapsed.shell--show-clawbot-settings {
   grid-template-columns: 0px minmax(0, 1fr);
 }
 
 .shell--chat-focus {
+  grid-template-columns: 0px minmax(0, 1fr);
+}
+
+.shell--chat-focus.shell--show-clawbot-settings {
   grid-template-columns: 0px minmax(0, 1fr);
 }
 
@@ -114,9 +131,7 @@
 }
 
 .brand-logo {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
+  display: none; /* Ícone removido */
 }
 
 .brand-logo img {
@@ -191,6 +206,30 @@
    Navigation Sidebar
    =========================================== */
 
+/* Nova barra lateral (à esquerda) */
+.new-sidebar-area {
+  grid-area: new-sidebar;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  transition:
+    width var(--shell-focus-duration) var(--shell-focus-ease),
+    opacity var(--shell-focus-duration) var(--shell-focus-ease);
+}
+
+/* Esconde a primeira barra quando mostra configurações do Clawbot */
+.shell--show-clawbot-settings .new-sidebar-area {
+  display: none;
+}
+
+.shell--chat-focus .new-sidebar-area {
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 .nav {
   grid-area: nav;
   overflow-y: auto;
@@ -203,6 +242,12 @@
     padding var(--shell-focus-duration) var(--shell-focus-ease),
     opacity var(--shell-focus-duration) var(--shell-focus-ease);
   min-height: 0;
+  display: none; /* Escondido por padrão */
+}
+
+/* Mostra a nav apenas quando showClawbotSettings está ativo */
+.shell--show-clawbot-settings .nav {
+  display: block;
 }
 
 .nav::-webkit-scrollbar {

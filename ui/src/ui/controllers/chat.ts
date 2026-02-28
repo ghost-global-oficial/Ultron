@@ -34,13 +34,20 @@ export async function loadChatHistory(state: ChatState) {
   state.chatLoading = true;
   state.lastError = null;
   try {
+    console.log('[DEBUG] Loading chat history for session:', state.sessionKey);
     const res = await state.client.request("chat.history", {
       sessionKey: state.sessionKey,
       limit: 200,
     });
+    console.log('[DEBUG] Chat history response:', {
+      sessionKey: state.sessionKey,
+      messagesCount: Array.isArray(res.messages) ? res.messages.length : 0,
+      messages: res.messages,
+    });
     state.chatMessages = Array.isArray(res.messages) ? res.messages : [];
     state.chatThinkingLevel = res.thinkingLevel ?? null;
   } catch (err) {
+    console.error('[DEBUG] Error loading chat history:', err);
     state.lastError = String(err);
   } finally {
     state.chatLoading = false;
@@ -173,6 +180,15 @@ export function handleChatEvent(state: ChatState, payload?: ChatEventPayload) {
     return null;
   }
 
+  console.log('[DEBUG] Chat event received:', {
+    state: payload.state,
+    runId: payload.runId,
+    currentRunId: state.chatRunId,
+    sessionKey: payload.sessionKey,
+    messagesCount: state.chatMessages.length,
+    hasMessage: !!payload.message,
+  });
+
   // Final from another run (e.g. sub-agent announce): refresh history to show new message.
   // See https://github.com/openclaw/openclaw/issues/1909
   if (payload.runId && state.chatRunId && payload.runId !== state.chatRunId) {
@@ -184,13 +200,23 @@ export function handleChatEvent(state: ChatState, payload?: ChatEventPayload) {
 
   if (payload.state === "delta") {
     const next = extractText(payload.message);
+    console.log('[DEBUG] Delta event - extracted text:', {
+      textLength: next?.length ?? 0,
+      currentStreamLength: state.chatStream?.length ?? 0,
+      text: next?.substring(0, 100),
+    });
     if (typeof next === "string") {
       const current = state.chatStream ?? "";
       if (!current || next.length >= current.length) {
         state.chatStream = next;
+        console.log('[DEBUG] Stream updated:', {
+          newLength: next.length,
+          preview: next.substring(0, 100),
+        });
       }
     }
   } else if (payload.state === "final") {
+    console.log('[DEBUG] Chat final event, clearing stream state');
     state.chatStream = null;
     state.chatRunId = null;
     state.chatStreamStartedAt = null;

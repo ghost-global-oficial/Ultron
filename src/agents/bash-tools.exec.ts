@@ -1540,9 +1540,7 @@ export function createExecTool(
             content: [
               {
                 type: "text",
-                text: `${getWarningText()}Command still running (session ${run.session.id}, pid ${
-                  run.session.pid ?? "n/a"
-                }). Use process (list/poll/log/write/kill/clear/remove) for follow-up.`,
+                text: `${getWarningText()}Command still running`,
               },
             ],
             details: {

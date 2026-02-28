@@ -52,6 +52,15 @@ export function renderToolCardSidebar(card: ToolCard, onOpenSidebar?: (content: 
   const display = resolveToolDisplay({ name: card.name, args: card.args });
   const detail = formatToolDetail(display);
   const hasText = Boolean(card.text?.trim());
+  
+  // Check if this is an error
+  const isError = hasText && (
+    card.text?.includes('"status": "error"') ||
+    card.text?.includes('not recognized') ||
+    card.text?.includes('CommandNotFoundException') ||
+    card.text?.includes('Error') ||
+    card.text?.includes('failed')
+  );
 
   const canClick = Boolean(onOpenSidebar);
   const handleClick = canClick
@@ -74,7 +83,7 @@ export function renderToolCardSidebar(card: ToolCard, onOpenSidebar?: (content: 
 
   return html`
     <div
-      class="chat-tool-card ${canClick ? "chat-tool-card--clickable" : ""}"
+      class="chat-tool-card ${canClick ? "chat-tool-card--clickable" : ""} ${isError ? "chat-tool-card--error" : ""}"
       @click=${handleClick}
       role=${canClick ? "button" : nothing}
       tabindex=${canClick ? "0" : nothing}
@@ -96,15 +105,21 @@ export function renderToolCardSidebar(card: ToolCard, onOpenSidebar?: (content: 
           <span>${display.label}</span>
         </div>
         ${
-          canClick
+          canClick && !isError
             ? html`<span class="chat-tool-card__action">${hasText ? "View" : ""} ${icons.check}</span>`
             : nothing
         }
+        ${
+          canClick && isError
+            ? html`<span class="chat-tool-card__action chat-tool-card__action--error">Error ${icons.alertCircle}</span>`
+            : nothing
+        }
         ${isEmpty && !canClick ? html`<span class="chat-tool-card__status">${icons.check}</span>` : nothing}
+        ${isError && !canClick ? html`<span class="chat-tool-card__status chat-tool-card__status--error">${icons.alertCircle}</span>` : nothing}
       </div>
-      ${detail ? html`<div class="chat-tool-card__detail">${detail}</div>` : nothing}
+      ${detail && !isError ? html`<div class="chat-tool-card__detail">${detail}</div>` : nothing}
       ${
-        isEmpty
+        isEmpty && !isError
           ? html`
               <div class="chat-tool-card__status-text muted">Completed</div>
             `
@@ -112,10 +127,10 @@ export function renderToolCardSidebar(card: ToolCard, onOpenSidebar?: (content: 
       }
       ${
         showCollapsed
-          ? html`<div class="chat-tool-card__preview mono">${getTruncatedPreview(card.text!)}</div>`
+          ? html`<div class="chat-tool-card__preview mono ${isError ? "chat-tool-card__preview--error" : ""}">${getTruncatedPreview(card.text!)}</div>`
           : nothing
       }
-      ${showInline ? html`<div class="chat-tool-card__inline mono">${card.text}</div>` : nothing}
+      ${showInline ? html`<div class="chat-tool-card__inline mono ${isError ? "chat-tool-card__inline--error" : ""}">${getTruncatedPreview(card.text!)}</div>` : nothing}
     </div>
   `;
 }

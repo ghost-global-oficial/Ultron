@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Ultron Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            padding: 20px;
+            background: #1a1a1a;
+            border-bottom: 2px solid #ff0000;
+        }
+        h1 {
+            font-size: 24px;
+            color: #ff0000;
+        }
+        #status {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .message {
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message.user {
+            text-align: right;
+        }
+        .message-content {
+            display: inline-block;
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            text-align: left;
+        }
+        .message.user .message-content {
+            background: #ff0000;
+            color: #fff;
+        }
+        .message.assistant .message-content {
+            background: #1a1a1a;
+            color: #fff;
+            border: 1px solid #333;
+        }
+        .message-role {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+        .message.thinking .message-content {
+            background: #1a1a1a;
+            color: #888;
+            font-style: italic;
+            border: 1px solid #333;
+        }
+        #input-area {
+            padding: 20px;
+            background: #1a1a1a;
+            border-top: 1px solid #333;
+            display: flex;
+            gap: 10px;
+        }
+        #message-input {
+            flex: 1;
+            padding: 12px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        #message-input:focus {
+            outline: none;
+            border-color: #ff0000;
+        }
+        #send-button {
+            padding: 12px 24px;
+            background: #ff0000;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #send-button:hover {
+            background: #cc0000;
+            transform: scale(1.05);
+        }
+        #send-button:disabled {
+            background: #333;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .error {
+            background: #ff0000;
+            color: #fff;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🦞 ULTRON</h1>
+        <div id="status">Conectando...</div>
+    </header>
+    
+    <div id="messages"></div>
+    
+    <div id="input-area">
+        <input type="text" id="message-input" placeholder="Digite sua mensagem..." disabled>
+        <button id="send-button" disabled>Enviar</button>
+    </div>
+
+    <script>
+        const GATEWAY_URL = 'ws://localhost:18789';
+        const GATEWAY_TOKEN = '6923gz1p7dxa1w8m63alxgao22074n5x';
+        const SESSION_KEY = 'agent:main:main';
+        
+        let ws = null;
+        let connected = false;
+        let messageId = 0;
+        
+        const messagesDiv = document.getElementById('messages');
+        const statusDiv = document.getElementById('status');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        
+        function updateStatus(text, color = '#888') {
+            statusDiv.textContent = text;
+            statusDiv.style.color = color;
+        }
+        
+        function addMessage(role, content, thinking = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}${thinking ? ' thinking' : ''}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            const roleDiv = document.createElement('div');
+            roleDiv.className = 'message-role';
+            roleDiv.textContent = role === 'user' ? 'Você' : thinking ? 'Pensando...' : 'Ultron';
+            
+            const textDiv = document.createElement('div');
+            textDiv.textContent = content;
+            
+            contentDiv.appendChild(roleDiv);
+            contentDiv.appendChild(textDiv);
+            messageDiv.appendChild(contentDiv);
+            messagesDiv.appendChild(messageDiv);
+            
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            return messageDiv;
+        }
+        
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = '❌ ' + message;
+            messagesDiv.appendChild(errorDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function connectWebSocket() {
+            updateStatus('Conectando ao gateway...', '#ff0000');
+            
+            ws = new WebSocket(GATEWAY_URL);
+            
+            ws.onopen = () => {
+                console.log('✓ WebSocket conectado');
+                
+                // Enviar autenticação
+                const connectMsg = {
+                    type: 'req',
+                    id: `connect-${Date.now()}`,
+                    method: 'connect',
+                    params: {
+                        token: GATEWAY_TOKEN,
+                        clientId: 'ultron-chat',
+                        clientVersion: '1.0.0'
+                    }
+                };
+                
+                ws.send(JSON.stringify(connectMsg));
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('← Recebido:', data);
+                    
+                    if (data.type === 'res' && data.method === 'connect') {
+                        if (data.ok) {
+                            connected = true;
+                            updateStatus('✓ Conectado', '#00ff00');
+                            messageInput.disabled = false;
+                            sendButton.disabled = false;
+                            messageInput.focus();
+                        } else {
+                            showError('Falha na autenticação: ' + (data.error || 'Desconhecido'));
+                        }
+                    }
+                    
+                    if (data.type === 'event' && data.event === 'agent') {
+                        const payload = data.payload;
+                        
+                        if (payload.stream === 'lifecycle') {
+                            if (payload.data.phase === 'start') {
+                                addMessage('assistant', 'Processando...', true);
+                            }
+                        }
+                        
+                        if (payload.stream === 'text') {
+                            // Atualizar ou criar mensagem com o texto
+                            const lastMsg = messagesDiv.lastElementChild;
+                            if (lastMsg && lastMsg.classList.contains('thinking')) {
+                                lastMsg.remove();
+                            }
+                            
+                            const existingMsg = document.querySelector(`[data-run-id="${payload.runId}"]`);
+                            if (existingMsg) {
+                                const textDiv = existingMsg.querySelector('.message-content > div:last-child');
+                                textDiv.textContent += payload.data.text;
+                            } else {
+                                const msgDiv = addMessage('assistant', payload.data.text);
+                                msgDiv.dataset.runId = payload.runId;
+                            }
+                        }
+                    }
+                    
+                    if (data.type === 'event' && data.event === 'chat') {
+                        if (data.payload.state === 'final') {
+                            // Remover mensagem "Pensando..."
+                            const thinkingMsg = document.querySelector('.message.thinking');
+                            if (thinkingMsg) {
+                                thinkingMsg.remove();
+                            }
+                        }
+                    }
+                    
+                } catch (error) {
+                    console.error('Erro ao processar mensagem:', error);
+                }
+            };
+            
+            ws.onerror = (error) => {
+                console.error('❌ Erro no WebSocket:', error);
+                updateStatus('❌ Erro de conexão', '#ff0000');
+                showError('Erro de conexão com o gateway');
+            };
+            
+            ws.onclose = () => {
+                console.log('WebSocket fechado');
+                connected = false;
+                updateStatus('❌ Desconectado', '#ff0000');
+                messageInput.disabled = true;
+                sendButton.disabled = true;
+                
+                // Tentar reconectar após 3 segundos
+                setTimeout(() => {
+                    if (!connected) {
+                        connectWebSocket();
+                    }
+                }, 3000);
+            };
+        }
+        
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message || !connected) return;
+            
+            // Adicionar mensagem do usuário
+            addMessage('user', message);
+            
+            // Limpar input
+            messageInput.value = '';
+            
+            // Enviar via WebSocket
+            const chatMsg = {
+                type: 'req',
+                id: `msg-${++messageId}`,
+                method: 'chat.send',
+                params: {
+                    sessionKey: SESSION_KEY,
+                    message: message,
+                    deliver: false
+                }
+            };
+            
+            console.log('→ Enviando:', chatMsg);
+            ws.send(JSON.stringify(chatMsg));
+        }
+        
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Conectar ao iniciar
+        connectWebSocket();
+    </script>
+</body>
+</html>

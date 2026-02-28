@@ -1,0 +1,274 @@
+/* ===================================================
+   CHAT WELCOME - Página de boas-vindas
+   =================================================== */
+
+.chat-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 40px 20px;
+}
+
+.chat-welcome__content {
+  max-width: 800px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+}
+
+.chat-welcome__title {
+  font-size: 40px;
+  font-weight: 400;
+  color: var(--text-strong);
+  text-align: center;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+/* Input do prompt - aparece primeiro */
+.chat-welcome__input-container {
+  width: 100%;
+  max-width: 700px;
+  order: 1;
+}
+
+/* Wrapper do textarea na tela de boas-vindas */
+.chat-welcome__textarea-wrapper {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex !important;
+  align-items: stretch;
+  padding: 16px 16px 0 16px;
+  border: none !important;
+  background: transparent !important;
+  margin: 0 !important;
+}
+
+/* Botão do microfone na tela de boas-vindas - sem fundo */
+.chat-welcome__mic-btn {
+  background: transparent !important;
+  border: none !important;
+}
+
+.chat-welcome__mic-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: none !important;
+}
+
+:root[data-theme="light"] .chat-welcome__mic-btn {
+  background: transparent !important;
+  border: none !important;
+}
+
+:root[data-theme="light"] .chat-welcome__mic-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border: none !important;
+}
+
+/* Botão de conectores na tela de boas-vindas */
+.chat-welcome__connectors-btn {
+  position: relative !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 50% !important;
+  transition: all 150ms ease-out;
+  flex-shrink: 0 !important;
+}
+
+.chat-welcome__connectors-btn:hover {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.chat-welcome__connectors-btn svg {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+  transform: rotate(45deg);
+  stroke: rgba(255, 255, 255, 0.9) !important;
+  fill: none !important;
+  stroke-width: 1.5 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+.chat-welcome__connectors-btn svg path {
+  stroke: rgba(255, 255, 255, 0.9) !important;
+  fill: none !important;
+}
+
+.chat-welcome__connectors-btn:hover svg,
+.chat-welcome__connectors-btn:hover svg path {
+  stroke: rgba(255, 255, 255, 1) !important;
+}
+
+:root[data-theme="light"] .chat-welcome__connectors-btn {
+  border-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+:root[data-theme="light"] .chat-welcome__connectors-btn:hover {
+  border-color: rgba(0, 0, 0, 0.4) !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+:root[data-theme="light"] .chat-welcome__connectors-btn svg,
+:root[data-theme="light"] .chat-welcome__connectors-btn svg path {
+  stroke: rgba(0, 0, 0, 0.7) !important;
+}
+
+:root[data-theme="light"] .chat-welcome__connectors-btn:hover svg,
+:root[data-theme="light"] .chat-welcome__connectors-btn:hover svg path {
+  stroke: rgba(0, 0, 0, 0.9) !important;
+}
+
+.chat-welcome__textarea-wrapper textarea {
+  width: 100%;
+  height: auto;
+  min-height: 24px !important;
+  max-height: 200px;
+  padding: 0;
+  border-radius: 0;
+  overflow-y: auto;
+  resize: none;
+  white-space: pre-wrap;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  background: transparent !important;
+  border: none !important;
+  color: var(--text);
+  transition: opacity 150ms ease-out;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.chat-welcome__textarea-wrapper textarea:focus {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  opacity: 1;
+}
+
+.chat-welcome__textarea-wrapper textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+:root[data-theme="light"] .chat-welcome__textarea-wrapper textarea::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.chat-welcome__textarea-wrapper textarea:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Sugestões em grid */
+.chat-welcome__suggestions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 700px;
+  order: 2;
+}
+
+.chat-welcome__suggestion {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 200ms ease-out;
+  text-align: left;
+}
+
+.chat-welcome__suggestion:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.chat-welcome__suggestion-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.chat-welcome__suggestion-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chat-welcome__suggestion-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-welcome__suggestion-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.chat-welcome__suggestion-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* Tema claro */
+:root[data-theme="light"] .chat-welcome__suggestion {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme="light"] .chat-welcome__suggestion:hover {
+  background: #f9fafb;
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .chat-welcome__title {
+    font-size: 32px;
+  }
+
+  .chat-welcome__suggestions {
+    grid-template-columns: 1fr;
+  }
+
+  .chat-welcome__content {
+    gap: 32px;
+  }
+}

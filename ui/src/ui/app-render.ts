@@ -2,7 +2,7 @@ import { html, nothing } from "lit";
 import type { AppViewState } from "./app-view-state";
 import { parseAgentSessionKey } from "../../../src/routing/session-key.js";
 import { refreshChatAvatar } from "./app-chat";
-import { renderChatControls, renderTab, renderThemeToggle } from "./app-render.helpers";
+import { renderChatModelButton, renderChatModelMenu, renderTab, renderThemeToggle } from "./app-render.helpers";
 import { loadChannels } from "./controllers/channels";
 import { loadChatHistory } from "./controllers/chat";
 import {
@@ -60,6 +60,15 @@ import { renderNodes } from "./views/nodes";
 import { renderOverview } from "./views/overview";
 import { renderSessions } from "./views/sessions";
 import { renderSkills } from "./views/skills";
+import { renderNewSidebar } from "./views/new-sidebar";
+import { renderSettingsMenu } from "./views/settings-menu";
+import { renderUltronSettingsAdvanced } from "./views/ultron-settings-advanced";
+import { renderConnectorsMenu } from "./views/connectors-menu";
+import { renderManageConnectorsModal } from "./views/manage-connectors-modal";
+import { renderManageConnectorsSettings } from "./views/manage-connectors-settings";
+import { renderScheduleTaskPanel } from "./views/schedule-task-panel";
+import { renderAgentsPage } from "./views/agents-page";
+import { hiveManager } from "../hive/hive-manager";
 
 const AVATAR_DATA_RE = /^data:/i;
 const AVATAR_HTTP_RE = /^https?:\/\//i;
@@ -77,6 +86,11 @@ function resolveAssistantAvatarUrl(state: AppViewState): string | undefined {
   if (AVATAR_DATA_RE.test(candidate) || AVATAR_HTTP_RE.test(candidate)) {
     return candidate;
   }
+  // Convert relative avatar paths to full gateway URLs
+  if (candidate.startsWith("/")) {
+    const gatewayUrl = state.settings?.gatewayUrl || "http://localhost:18789";
+    return `${gatewayUrl}${candidate}?meta=1`;
+  }
   return identity?.avatarUrl;
 }
 
@@ -92,7 +106,7 @@ export function renderApp(state: AppViewState) {
   const chatAvatarUrl = state.chatAvatarUrl ?? assistantAvatarUrl ?? null;
 
   return html`
-    <div class="shell ${isChat ? "shell--chat" : ""} ${chatFocus ? "shell--chat-focus" : ""} ${state.settings.navCollapsed ? "shell--nav-collapsed" : ""} ${state.onboarding ? "shell--onboarding" : ""}">
+    <div class="shell ${isChat ? "shell--chat" : ""} ${chatFocus ? "shell--chat-focus" : ""} ${state.settings.navCollapsed ? "shell--nav-collapsed" : ""} ${state.onboarding ? "shell--onboarding" : ""} ${state.showClawbotSettings ? "shell--show-clawbot-settings" : ""}">
       <header class="topbar">
         <div class="topbar-left">
           <button
@@ -108,12 +122,9 @@ export function renderApp(state: AppViewState) {
             <span class="nav-collapse-toggle__icon">${icons.menu}</span>
           </button>
           <div class="brand">
-            <div class="brand-logo">
-              <img src="/favicon.svg" alt="OpenClaw" />
-            </div>
             <div class="brand-text">
-              <div class="brand-title">OPENCLAW</div>
-              <div class="brand-sub">Gateway Dashboard</div>
+              <div class="brand-title">ULTRON</div>
+              <div class="brand-sub">by GHOST</div>
             </div>
           </div>
         </div>
@@ -126,6 +137,78 @@ export function renderApp(state: AppViewState) {
           ${renderThemeToggle(state)}
         </div>
       </header>
+      
+      <div class="new-sidebar-area">
+        ${renderNewSidebar({
+          showClawbotSettings: state.showClawbotSettings,
+          sessions: state.sessionsResult,
+          sessionKey: state.sessionKey,
+          onNewTask: () => state.handleNewTask(),
+          onAgents: () => state.handleAgents(),
+          onSearch: () => state.handleSearch(),
+          onNewProject: () => state.handleNewProject(),
+          onHive: () => state.handleManageConnectors('hive'),
+          hiveCreated: hiveManager.getState().created,
+          onSessionSelect: (key) => {
+            console.log('[DEBUG] onSessionSelect called with key:', key);
+            console.log('[DEBUG] Current sessionKey:', state.sessionKey);
+            console.log('[DEBUG] Current tab:', state.tab);
+            
+            state.sessionKey = key;
+            state.chatMessage = "";
+            state.chatAttachments = [];
+            state.chatStream = null;
+            state.chatStreamStartedAt = null;
+            state.chatRunId = null;
+            state.chatQueue = [];
+            state.resetToolStream();
+            state.resetChatScroll();
+            state.applySettings({
+              ...state.settings,
+              sessionKey: key,
+              lastActiveSessionKey: key,
+            });
+            
+            console.log('[DEBUG] Switching to chat tab');
+            state.setTab('chat');
+            
+            console.log('[DEBUG] Loading assistant identity and chat history');
+            void state.loadAssistantIdentity();
+            void loadChatHistory(state);
+            void refreshChatAvatar(state);
+          },
+          onSettingsClick: (e: MouseEvent) => state.handleSettingsClick(e),
+          onCloseClawbotSettings: () => state.handleCloseClawbotSettings(),
+          onTaskMenuOpen: (e: MouseEvent, key: string) => state.handleTaskMenuOpen(e, key),
+          taskMenuOpen: state.taskMenuOpen,
+          taskMenuPosition: state.taskMenuPosition,
+          onTaskMenuClose: () => state.handleTaskMenuClose(),
+          onPinTask: (key: string) => state.handlePinTask(key),
+          onDeleteTask: (key: string) => state.handleDeleteTask(key),
+          onArchiveTask: (key: string) => state.handleArchiveTask(key),
+          onRenameTask: (key: string) => state.handleRenameTask(key),
+          onShareTask: (key: string) => state.handleShareTask(key),
+        })}
+      </div>
+      
+      ${renderSettingsMenu({
+        isOpen: state.settingsMenuOpen,
+        position: state.settingsMenuPosition,
+        onClawbotSettings: () => state.handleClawbotSettings(),
+        onClose: () => state.handleSettingsMenuClose(),
+      })}
+      
+      ${renderConnectorsMenu({
+        isOpen: state.connectorsMenuOpen,
+        position: state.connectorsMenuPosition,
+        connectors: state.connectors,
+        onClose: () => state.handleConnectorsMenuClose(),
+        onToggleConnector: (id: string) => state.handleToggleConnector(id),
+        onConnectConnector: (id: string) => state.handleConnectConnector(id),
+        onAddConnectors: () => state.handleAddConnectors(),
+        onManageConnectors: () => state.handleManageConnectors(),
+      })}
+      
       <aside class="nav ${state.settings.navCollapsed ? "nav--collapsed" : ""}">
         ${TAB_GROUPS.map((group) => {
           const isGroupCollapsed = state.settings.navGroupsCollapsed[group.label] ?? false;
@@ -175,11 +258,15 @@ export function renderApp(state: AppViewState) {
         <section class="content-header">
           <div>
             <div class="page-title">${titleForTab(state.tab)}</div>
-            <div class="page-sub">${subtitleForTab(state.tab)}</div>
+            ${isChat ? html`
+              <div class="chat-model-selector">
+                ${renderChatModelButton(state)}
+                ${state.chatModelMenuOpen ? renderChatModelMenu(state) : nothing}
+              </div>
+            ` : html`<div class="page-sub">${subtitleForTab(state.tab)}</div>`}
           </div>
           <div class="page-meta">
             ${state.lastError ? html`<div class="pill danger">${state.lastError}</div>` : nothing}
-            ${isChat ? renderChatControls(state) : nothing}
           </div>
         </section>
 
@@ -490,6 +577,8 @@ export function renderApp(state: AppViewState) {
                 onSplitRatioChange: (ratio: number) => state.handleSplitRatioChange(ratio),
                 assistantName: state.assistantName,
                 assistantAvatar: state.assistantAvatar,
+                onConnectorsMenuOpen: (event: MouseEvent) => state.handleConnectorsMenuOpen(event),
+                onScheduleTask: () => state.handleOpenScheduleTask(),
               })
             : nothing
         }
@@ -577,9 +666,56 @@ export function renderApp(state: AppViewState) {
               })
             : nothing
         }
+
+        ${
+          state.tab === "agents"
+            ? renderAgentsPage({
+                agents: state.agentsList?.agents ?? [],
+                onCreateAgent: () => state.handleCreateAgent(),
+                onEditAgent: (id: string) => state.handleEditAgent(id),
+                onDeleteAgent: (id: string) => state.handleDeleteAgent(id),
+                onToggleAgent: (id: string) => state.handleToggleAgent(id),
+              })
+            : nothing
+        }
       </main>
       ${renderExecApprovalPrompt(state)}
       ${renderGatewayUrlConfirmation(state)}
+      ${renderScheduleTaskPanel({
+        isOpen: state.scheduleTaskPanelOpen,
+        selectedDate: state.scheduleTaskSelectedDate,
+        selectedTime: state.scheduleTaskSelectedTime,
+        repeatType: state.scheduleTaskRepeatType,
+        repeatCount: state.scheduleTaskRepeatCount,
+        onClose: () => state.handleCloseScheduleTask(),
+        onDateSelect: (date: Date) => state.handleScheduleTaskDateSelect(date),
+        onTimeChange: (time: string) => state.handleScheduleTaskTimeChange(time),
+        onRepeatTypeChange: (type: "once" | "daily" | "weekly" | "monthly") => state.handleScheduleTaskRepeatTypeChange(type),
+        onRepeatCountChange: (count: number) => state.handleScheduleTaskRepeatCountChange(count),
+        onSchedule: () => state.handleScheduleTask(),
+      })}
+      ${renderManageConnectorsSettings({
+        isOpen: state.manageConnectorsSettingsOpen,
+        connectors: state.connectors,
+        activeSection: state.manageConnectorsSettingsSection,
+        onClose: () => state.handleManageConnectorsSettingsClose(),
+        onSectionChange: (section) => state.handleManageConnectorsSettingsSection(section),
+        onConnectorClick: (id: string) => state.handleConnectorSettingsClick(id),
+        onAddConnectors: () => {
+          state.handleManageConnectorsSettingsClose();
+          state.handleAddConnectors();
+        },
+      })}
+      ${renderManageConnectorsModal({
+        isOpen: state.manageConnectorsModalOpen,
+        connectors: state.connectorApps,
+        searchQuery: state.manageConnectorsSearchQuery,
+        activeTab: state.manageConnectorsActiveTab,
+        onClose: () => state.handleManageConnectorsClose(),
+        onSearchChange: (query: string) => state.handleManageConnectorsSearchChange(query),
+        onTabChange: (tab: "applications" | "custom-api" | "custom-mcp") => state.handleManageConnectorsTabChange(tab),
+        onToggleConnector: (id: string) => state.handleToggleConnectorApp(id),
+      })}
     </div>
   `;
 }

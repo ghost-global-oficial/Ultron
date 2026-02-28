@@ -47,16 +47,36 @@
   min-width: 180px;
 }
 
-/* Chat thread - scrollable middle section, transparent */
+/* Chat thread - scrollable middle section, transparent, centralizado */
 .chat-thread {
-  flex: 1 1 0; /* Grow, shrink, and use 0 base for proper scrolling */
+  flex: 1 1 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px 4px;
-  margin: 0 -4px;
-  min-height: 0; /* Allow shrinking for flex scroll behavior */
-  border-radius: 12px;
+  padding: 40px 20%;
+  margin: 0;
+  min-height: 0;
+  border-radius: 0;
   background: transparent;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Centralizar quando vazio */
+.chat-thread:empty {
+  justify-content: center;
+  align-items: center;
+}
+
+@media (max-width: 1200px) {
+  .chat-thread {
+    padding: 40px 10%;
+  }
+}
+
+@media (max-width: 768px) {
+  .chat-thread {
+    padding: 20px 5%;
+  }
 }
 
 /* Focus mode exit button */
@@ -100,18 +120,64 @@
   stroke-linejoin: round;
 }
 
-/* Chat compose - sticky at bottom */
+/* Chat compose - card único centralizado estilo ChatGPT */
 .chat-compose {
   position: sticky;
   bottom: 0;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: auto; /* Push to bottom of flex container */
-  padding: 12px 4px 4px;
-  background: linear-gradient(to bottom, transparent, var(--bg) 20%);
+  gap: 0;
+  margin-top: auto;
+  padding: 24px 20%;
+  background: transparent;
   z-index: 10;
+}
+
+/* Card container para input, send e new session - estilo ChatGPT */
+.chat-compose__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+  overflow: visible; /* Alterado de hidden para visible para permitir menu dropdown */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Borda luminosa branca quando o textarea está focado */
+.chat-compose__row:focus-within {
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2), 0 0 20px rgba(255, 255, 255, 0.15);
+}
+
+:root[data-theme="light"] .chat-compose__row {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+:root[data-theme="light"] .chat-compose__row:focus-within {
+  border-color: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15), 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 1200px) {
+  .chat-compose {
+    padding: 20px 10%;
+  }
+}
+
+@media (max-width: 768px) {
+  .chat-compose {
+    padding: 16px 5%;
+  }
 }
 
 /* Image attachments preview */
@@ -169,7 +235,11 @@
 }
 
 .chat-attachment__remove:hover {
-  background: rgba(220, 38, 38, 0.9);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="light"] .chat-attachment__remove:hover {
+  background: rgba(0, 0, 0, 0.9);
 }
 
 .chat-attachment__remove svg {
@@ -221,23 +291,27 @@
   justify-content: flex-end;
 }
 
-/* Compose input row - horizontal layout */
-.chat-compose__row {
-  display: flex;
-  align-items: stretch;
-  gap: 12px;
-  flex: 1;
-}
-
 :root[data-theme="light"] .chat-compose {
-  background: linear-gradient(to bottom, transparent, var(--bg-content) 20%);
+  background: transparent;
 }
 
+/* Área do textarea - ocupa toda a largura */
 .chat-compose__field {
   flex: 1 1 auto;
   min-width: 0;
-  display: flex;
+  display: flex !important;
   align-items: stretch;
+  padding: 16px 16px 0 16px;
+  border: none !important;
+  background: transparent !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  grid-template-columns: none !important;
+}
+
+.chat-compose__field::before,
+.chat-compose__field::after {
+  display: none !important;
 }
 
 /* Hide the "Message" label - keep textarea only */
@@ -248,17 +322,43 @@
 /* Override .field textarea min-height (180px) from components.css */
 .chat-compose .chat-compose__field textarea {
   width: 100%;
-  height: 40px;
-  min-height: 40px;
-  max-height: 150px;
-  padding: 9px 12px;
-  border-radius: 8px;
+  height: auto;
+  min-height: 24px !important;
+  max-height: 200px;
+  padding: 0;
+  border-radius: 0;
   overflow-y: auto;
   resize: none;
   white-space: pre-wrap;
   font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.45;
+  font-size: 16px;
+  line-height: 1.5;
+  background: transparent !important;
+  border: none !important;
+  color: var(--text);
+  transition: opacity 150ms ease-out;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.chat-compose .chat-compose__field textarea:focus {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  opacity: 1;
+}
+
+.chat-compose .chat-compose__field textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+:root[data-theme="light"] .chat-compose .chat-compose__field textarea::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.chat-compose .chat-compose__field textarea::placeholder {
+  color: var(--muted);
 }
 
 .chat-compose__field textarea:disabled {
@@ -266,22 +366,52 @@
   cursor: not-allowed;
 }
 
+/* Barra de ações na parte inferior do card */
 .chat-compose__actions {
   flex-shrink: 0;
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
+  padding: 12px 16px;
+  border-top: none;
+  background: transparent;
+}
+
+:root[data-theme="light"] .chat-compose__actions {
+  border-top: none;
+  background: transparent;
 }
 
 .chat-compose .chat-compose__actions .btn {
-  padding: 0 16px;
+  padding: 8px 16px;
   font-size: 13px;
-  height: 40px;
-  min-height: 40px;
-  max-height: 40px;
+  height: 36px;
+  min-height: 36px;
+  max-height: 36px;
   line-height: 1;
   white-space: nowrap;
   box-sizing: border-box;
+  border-radius: 8px;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.chat-compose .chat-compose__actions .btn:hover {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.chat-compose .chat-compose__actions .btn.primary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.chat-compose .chat-compose__actions .btn.primary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
 /* Chat controls - moved to content-header area, left aligned */
@@ -401,4 +531,280 @@
   .chat-controls__session {
     min-width: 120px;
   }
+}
+
+
+/* ===================================================
+   CHAT COMPOSE - NOVO LAYOUT COM BOTÕES
+   =================================================== */
+
+/* Linha inferior com botões */
+.chat-compose__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  gap: 8px;
+}
+
+/* Container do botão de adicionar (à esquerda) */
+.chat-compose__add-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.chat-compose__add-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50% !important;
+  background: transparent !important;
+  border: none !important;
+  transition: all 150ms ease-out;
+}
+
+.chat-compose__add-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.chat-compose__add-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Menu dropdown */
+.chat-compose__menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 8px;
+  background: #1a1a1a;
+  border: 1px solid #333333;
+  border-radius: 8px;
+  padding: 4px;
+  min-width: 200px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: all 200ms ease-out;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.chat-compose__menu--open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.chat-compose__menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #d1d5db;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease-out;
+}
+
+.chat-compose__menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.chat-compose__menu-item svg {
+  width: 14px;
+  height: 14px;
+  stroke: #9ca3af;
+  flex-shrink: 0;
+}
+
+/* Rotação de 45 graus para ícones específicos */
+.chat-compose__menu-item--puzzle svg {
+  transform: rotate(45deg);
+}
+
+.chat-compose__menu-item--paperclip svg {
+  transform: rotate(45deg);
+}
+
+/* Botões de ação (microfone e enviar) */
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.btn-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.chat-compose__mic-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-left: 8px;
+}
+
+.chat-compose__mic-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.chat-compose__send-btn {
+  margin-left: 8px;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  transition: background 200ms ease-out !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.chat-compose__send-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.chat-compose__send-btn:focus {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.chat-compose__send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Estado ativo - quando há texto */
+.chat-compose__send-btn--active {
+  background: #ffffff !important;
+}
+
+.chat-compose__send-btn--active svg {
+  stroke: #000000 !important;
+}
+
+.chat-compose__send-btn--active:hover:not(:disabled) {
+  background: #f0f0f0 !important;
+}
+
+/* Estado loading - animação de spinner */
+.chat-compose__send-btn--loading {
+  background: #ffffff !important;
+  pointer-events: none;
+}
+
+.chat-compose__send-spinner {
+  width: 20px;
+  height: 20px;
+  stroke: #000000;
+  fill: none;
+  stroke-width: 3px;
+  stroke-linecap: round;
+  stroke-dasharray: 50;
+  stroke-dashoffset: 0;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dashoffset: 25;
+  }
+  100% {
+    transform: rotate(360deg);
+    stroke-dashoffset: 50;
+  }
+}
+
+/* Tema claro */
+:root[data-theme="light"] .chat-compose__add-btn {
+  background: transparent !important;
+  border: none !important;
+}
+
+:root[data-theme="light"] .chat-compose__add-btn:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+:root[data-theme="light"] .chat-compose__mic-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme="light"] .chat-compose__mic-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme="light"] .chat-compose__send-btn {
+  background: rgba(0, 0, 0, 0.1) !important;
+}
+
+:root[data-theme="light"] .chat-compose__send-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.15) !important;
+}
+
+:root[data-theme="light"] .chat-compose__send-btn--active {
+  background: #000000 !important;
+}
+
+:root[data-theme="light"] .chat-compose__send-btn--active svg {
+  stroke: #ffffff !important;
+}
+
+:root[data-theme="light"] .chat-compose__send-btn--active:hover:not(:disabled) {
+  background: #1a1a1a !important;
+}
+
+:root[data-theme="light"] .chat-compose__send-btn--loading {
+  background: #000000 !important;
+}
+
+:root[data-theme="light"] .chat-compose__send-spinner {
+  stroke: #ffffff;
+}
+
+:root[data-theme="light"] .chat-compose__menu {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme="light"] .chat-compose__menu-item {
+  color: #374151;
+}
+
+:root[data-theme="light"] .chat-compose__menu-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+:root[data-theme="light"] .chat-compose__menu-item svg {
+  stroke: #6b7280;
 }
