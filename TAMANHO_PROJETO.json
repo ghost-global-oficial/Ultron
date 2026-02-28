@@ -1,0 +1,107 @@
+{
+  "data": "2026-02-28T22:42:08.015Z",
+  "tamanhoTotal": 36567402,
+  "tamanhoFormatado": "34.87 MB",
+  "totalArquivos": 4225,
+  "totalDiretorios": 380,
+  "detalhes": [
+    {
+      "dir": "src",
+      "size": 14101135,
+      "files": 2528,
+      "dirs": 134
+    },
+    {
+      "dir": "docs",
+      "size": 7255134,
+      "files": 339,
+      "dirs": 35
+    },
+    {
+      "dir": "apps",
+      "size": 5700279,
+      "files": 380,
+      "dirs": 28
+    },
+    {
+      "dir": "extensions",
+      "size": 3157221,
+      "files": 552,
+      "dirs": 79
+    },
+    {
+      "dir": "ui",
+      "size": 1709275,
+      "files": 182,
+      "dirs": 17
+    },
+    {
+      "dir": "assets",
+      "size": 1263062,
+      "files": 12,
+      "dirs": 3
+    },
+    {
+      "dir": "scripts",
+      "size": 292561,
+      "files": 91,
+      "dirs": 11
+    },
+    {
+      "dir": "skills",
+      "size": 261856,
+      "files": 75,
+      "dirs": 66
+    },
+    {
+      "dir": "test",
+      "size": 57697,
+      "files": 16,
+      "dirs": 5
+    },
+    {
+      "dir": "git-hooks",
+      "size": 127,
+      "files": 1,
+      "dirs": 1
+    },
+    {
+      "dir": "patches",
+      "size": 0,
+      "files": 1,
+      "dirs": 1
+    }
+  ],
+  "top5": [
+    {
+      "dir": "src",
+      "size": 14101135,
+      "files": 2528,
+      "dirs": 134
+    },
+    {
+      "dir": "docs",
+      "size": 7255134,
+      "files": 339,
+      "dirs": 35
+    },
+    {
+      "dir": "apps",
+      "size": 5700279,
+      "files": 380,
+      "dirs": 28
+    },
+    {
+      "dir": "extensions",
+      "size": 3157221,
+      "files": 552,
+      "dirs": 79
+    },
+    {
+      "dir": "ui",
+      "size": 1709275,
+      "files": 182,
+      "dirs": 17
+    }
+  ]
+}
