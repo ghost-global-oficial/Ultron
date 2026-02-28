@@ -3,3 +3,11 @@ dist/
 *.zip
 build_errors*
 shield/
+
+# Componentes OpenClaw removidos (não usados no ULTRON)
+apps/android/
+apps/ios/
+vendor/a2ui/
+packages/clawdbot/
+packages/moltbot/
+Swabble/

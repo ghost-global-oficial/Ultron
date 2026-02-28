@@ -1,0 +1,38 @@
+{
+  "data": "2026-02-28T22:25:40.575Z",
+  "componentesRemovidos": [
+    {
+      "path": "apps/android/",
+      "size": 1150879,
+      "files": 92
+    },
+    {
+      "path": "apps/ios/",
+      "size": 1946356,
+      "files": 73
+    },
+    {
+      "path": "vendor/a2ui/",
+      "size": 1583238,
+      "files": 173
+    },
+    {
+      "path": "packages/clawdbot/",
+      "size": 496,
+      "files": 3
+    },
+    {
+      "path": "packages/moltbot/",
+      "size": 491,
+      "files": 3
+    },
+    {
+      "path": "Swabble/",
+      "size": 67914,
+      "files": 36
+    }
+  ],
+  "totalSize": 4749374,
+  "totalFiles": 380,
+  "totalDirs": 6
+}
