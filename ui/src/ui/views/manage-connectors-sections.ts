@@ -241,6 +241,67 @@ function renderAccountSection(props: ManageConnectorsSettingsProps) {
           </div>
         </div>
       </div>
+
+      <!-- Zona de Perigo -->
+      <div class="settings-section settings-section--danger">
+        <h3 class="settings-section__title">Zona de Perigo</h3>
+        <p class="settings-section__description">
+          Ações irreversíveis que afetam permanentemente este ULTRON.
+        </p>
+        
+        <div class="danger-action">
+          <div class="danger-action__info">
+            <h4 class="danger-action__title">Apagar ULTRON</h4>
+            <p class="danger-action__description">
+              Remove toda a configuração do gateway, incluindo credenciais, vault e histórico. 
+              Você precisará configurar tudo novamente na próxima execução.
+            </p>
+          </div>
+          <button 
+            class="btn btn-danger" 
+            @click=${async () => {
+              const confirmed = await showConfirm(
+                'Tem certeza que deseja apagar toda a configuração? Esta ação não pode ser desfeita.'
+              );
+              
+              if (confirmed) {
+                try {
+                  // Chamar o IPC para deletar a configuração
+                  const { ipcRenderer } = (window as any).require('electron');
+                  const result = await ipcRenderer.invoke('delete-ultron-config');
+                  
+                  if (result.success) {
+                    await showAlert(
+                      'A configuração do ULTRON foi apagada com sucesso. O aplicativo será reiniciado.'
+                    );
+                    
+                    // Recarregar a página para voltar ao wizard
+                    window.location.reload();
+                  } else {
+                    await showAlert(
+                      'Erro ao apagar configuração: ' + result.error
+                    );
+                  }
+                } catch (error) {
+                  console.error('Erro ao apagar ULTRON:', error);
+                  await showAlert(
+                    'Erro ao apagar configuração: ' + (error as Error).message
+                  );
+                }
+              }
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18"/>
+              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+              <line x1="10" x2="10" y1="11" y2="17"/>
+              <line x1="14" x2="14" y1="11" y2="17"/>
+            </svg>
+            Apagar ULTRON
+          </button>
+        </div>
+      </div>
     </div>
   `;
 }

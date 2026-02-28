@@ -1075,3 +1075,59 @@ ipcMain.handle('test-gateway-connection', async (event, data) => {
   }
 });
 
+// Handler para apagar configuração do ULTRON
+ipcMain.handle('delete-ultron-config', async () => {
+  try {
+    console.log('=== APAGANDO CONFIGURAÇÃO DO ULTRON ===');
+    
+    const configPath = path.join(os.homedir(), '.ultron', 'ultron.json');
+    const vaultPath = path.join(os.homedir(), '.ultron', 'vault.json');
+    const shieldPath = path.join(os.homedir(), '.ultron', 'shield-config.json');
+    
+    let deletedFiles = [];
+    
+    // Deletar configuração principal
+    if (fs.existsSync(configPath)) {
+      fs.unlinkSync(configPath);
+      deletedFiles.push('ultron.json');
+      console.log('✓ Configuração deletada:', configPath);
+    }
+    
+    // Deletar vault
+    if (fs.existsSync(vaultPath)) {
+      fs.unlinkSync(vaultPath);
+      deletedFiles.push('vault.json');
+      console.log('✓ Vault deletado:', vaultPath);
+    }
+    
+    // Deletar configuração do SHIELD
+    if (fs.existsSync(shieldPath)) {
+      fs.unlinkSync(shieldPath);
+      deletedFiles.push('shield-config.json');
+      console.log('✓ SHIELD config deletado:', shieldPath);
+    }
+    
+    // Encerrar gateway se estiver rodando
+    if (gatewayProcess) {
+      console.log('✓ Encerrando gateway...');
+      gatewayProcess.kill();
+      gatewayProcess = null;
+    }
+    
+    console.log('✓ Configuração do ULTRON apagada com sucesso');
+    console.log('✓ Arquivos deletados:', deletedFiles.join(', '));
+    
+    return {
+      success: true,
+      message: 'Configuração apagada com sucesso',
+      deletedFiles
+    };
+  } catch (error) {
+    console.error('❌ Erro ao apagar configuração:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+

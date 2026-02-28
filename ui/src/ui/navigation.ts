@@ -170,7 +170,7 @@ export function titleForTab(tab: Tab) {
     case "nodes":
       return "Nodes";
     case "chat":
-      return "Chat";
+      return ""; // Removido o título "Chat"
     case "config":
       return "Config";
     case "debug":

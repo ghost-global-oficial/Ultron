@@ -2480,3 +2480,94 @@
 :root[data-theme="light"] .hive-info-value--mono {
   color: #374151;
 }
+
+
+/* ===================================================
+   ZONA DE PERIGO - APAGAR ULTRON
+   =================================================== */
+
+.danger-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px;
+  background: rgba(255, 68, 68, 0.05);
+  border: 1px solid rgba(255, 68, 68, 0.2);
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.danger-action__info {
+  flex: 1;
+}
+
+.danger-action__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ff4444;
+  margin: 0 0 8px 0;
+}
+
+.danger-action__description {
+  font-size: 13px;
+  color: #e5e7eb;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  background: #ff4444;
+  border: 1px solid #ff4444;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.btn-danger:hover {
+  background: #ff2222;
+  border-color: #ff2222;
+}
+
+.btn-danger svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Tema claro */
+:root[data-theme="light"] .settings-section--danger {
+  background: rgba(255, 68, 68, 0.05);
+  border-color: rgba(255, 68, 68, 0.2);
+}
+
+:root[data-theme="light"] .danger-action {
+  background: rgba(255, 68, 68, 0.05);
+  border-color: rgba(255, 68, 68, 0.2);
+}
+
+:root[data-theme="light"] .danger-action__title {
+  color: #dc2626;
+}
+
+:root[data-theme="light"] .danger-action__description {
+  color: #374151;
+}
+
+:root[data-theme="light"] .btn-danger {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+:root[data-theme="light"] .btn-danger:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
