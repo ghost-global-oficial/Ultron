@@ -203,12 +203,9 @@ function loadChatUIFromConfig(config) {
     const wsUrl = `ws://localhost:${config.gateway.port}`;
     const configScript = `
       <script>
-        // LIMPAR TUDO DO LOCALSTORAGE PRIMEIRO
-        console.log('=== LIMPANDO LOCALSTORAGE ===');
-        localStorage.clear();
-        console.log('✓ localStorage limpo');
+        // SALVAR CONFIGURAÇÕES NO LOCALSTORAGE
+        console.log('=== SALVANDO CONFIGURAÇÕES NO LOCALSTORAGE ===');
         
-        // SALVAR CONFIGURAÇÕES NO LOCALSTORAGE IMEDIATAMENTE
         const settings = {
           gatewayUrl: '${wsUrl}',
           token: '${config.gateway.auth.token}',
@@ -222,7 +219,7 @@ function loadChatUIFromConfig(config) {
           navGroupsCollapsed: {}
         };
         localStorage.setItem('ultron.control.settings.v1', JSON.stringify(settings));
-        console.log('✓ Settings saved to localStorage BEFORE page load');
+        console.log('✓ Settings saved to localStorage');
         console.log('✓ SessionKey:', 'agent:main:main');
         console.log('✓ Token:', '${config.gateway.auth.token}'.substring(0, 16) + '...');
         console.log('✓ Gateway URL:', '${wsUrl}');
@@ -296,18 +293,8 @@ function createWindow() {
       }
     }
     
-    // Deletar configuração
-    const configPath = path.join(os.homedir(), '.ultron', 'ultron.json');
-    if (fs.existsSync(configPath)) {
-      try {
-        fs.unlinkSync(configPath);
-        console.log('[Cleanup] ✓ Configuração deletada:', configPath);
-      } catch (error) {
-        console.error('[Cleanup] ❌ Erro ao deletar configuração:', error);
-      }
-    }
-    
-    console.log('[Cleanup] ✓ Limpeza completa (janela fechando)');
+    // CONFIGURAÇÃO MANTIDA: não deletar mais a configuração ao fechar
+    console.log('[Cleanup] ✓ Gateway encerrado, configuração preservada');
   });
   
   // Interceptar recarregamentos de página
@@ -374,27 +361,45 @@ app.whenReady().then(async () => {
   // console.log('🔍 Verificando Ollama...');
   // await setupOllama();
   
-  // SEMPRE DELETAR CONFIGURAÇÃO ANTIGA E RECONFIGURAR
-  console.log('=== LIMPANDO CONFIGURAÇÃO ANTIGA ===');
+  // VERIFICAR SE JÁ EXISTE CONFIGURAÇÃO
+  console.log('=== VERIFICANDO CONFIGURAÇÃO EXISTENTE ===');
   
-  const configPaths = [
-    path.join(os.homedir(), '.ultron', 'ultron.json'),
-    path.join(os.homedir(), '.openclaw', 'openclaw.json')
-  ];
+  const configPath = path.join(os.homedir(), '.ultron', 'ultron.json');
   
-  for (const configPath of configPaths) {
-    if (fs.existsSync(configPath)) {
-      try {
-        fs.unlinkSync(configPath);
-        console.log('✓ Deletado:', configPath);
-      } catch (error) {
-        console.error('❌ Erro ao deletar:', configPath, error);
+  if (fs.existsSync(configPath)) {
+    console.log('✓ Configuração encontrada:', configPath);
+    
+    try {
+      // Carregar configuração existente
+      const savedConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      console.log('✓ Configuração carregada com sucesso');
+      
+      // Criar janela
+      createWindow();
+      
+      // Iniciar gateway automaticamente com a configuração salva
+      console.log('=== INICIANDO GATEWAY AUTOMATICAMENTE ===');
+      const result = await startGatewayFromConfig(savedConfig);
+      
+      if (result.success) {
+        console.log('✓ Gateway iniciado automaticamente!');
+        
+        // Carregar UI do chat
+        loadChatUIFromConfig(savedConfig);
+      } else {
+        console.error('❌ Erro ao iniciar gateway:', result.message);
+        // Mesmo com erro, manter a janela aberta para o usuário reconfigurar
       }
+    } catch (error) {
+      console.error('❌ Erro ao processar configuração:', error);
+      // Se houver erro, abrir wizard de configuração
+      createWindow();
     }
+  } else {
+    console.log('ℹ️ Nenhuma configuração encontrada');
+    console.log('=== ABRINDO WIZARD DE CONFIGURAÇÃO ===');
+    createWindow();
   }
-  
-  console.log('=== ABRINDO WIZARD DE CONFIGURAÇÃO ===');
-  createWindow();
 });
 
 app.on('window-all-closed', () => {
@@ -408,18 +413,8 @@ app.on('window-all-closed', () => {
     console.log('[Cleanup] ✓ Gateway encerrado');
   }
   
-  // Deletar configuração ao fechar o app
-  const configPath = path.join(os.homedir(), '.ultron', 'ultron.json');
-  if (fs.existsSync(configPath)) {
-    try {
-      fs.unlinkSync(configPath);
-      console.log('[Cleanup] ✓ Configuração deletada:', configPath);
-    } catch (error) {
-      console.error('[Cleanup] ❌ Erro ao deletar configuração:', error);
-    }
-  }
-  
-  console.log('[Cleanup] ✓ Limpeza completa');
+  // CONFIGURAÇÃO MANTIDA: não deletar mais a configuração ao fechar
+  console.log('[Cleanup] ✓ Gateway encerrado, configuração preservada para próxima execução');
   
   if (process.platform !== 'darwin') {
     app.quit();
@@ -448,18 +443,8 @@ app.on('before-quit', () => {
     }
   }
   
-  // Deletar configuração
-  const configPath = path.join(os.homedir(), '.ultron', 'ultron.json');
-  if (fs.existsSync(configPath)) {
-    try {
-      fs.unlinkSync(configPath);
-      console.log('[Cleanup] ✓ Configuração deletada:', configPath);
-    } catch (error) {
-      console.error('[Cleanup] ❌ Erro ao deletar configuração:', error);
-    }
-  }
-  
-  console.log('[Cleanup] ✓ Limpeza completa (before-quit)');
+  // CONFIGURAÇÃO MANTIDA: não deletar mais a configuração ao fechar
+  console.log('[Cleanup] ✓ Gateway encerrado, configuração preservada para próxima execução');
 });
 
 // Limpeza ao sair do app (fallback)

@@ -30,7 +30,7 @@ const config = {
   },
   "env": {
     "vars": {
-      "OPENROUTER_API_KEY": "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"
+      "OPENROUTER_API_KEY": "sk-or-v1-YOUR_API_KEY_HERE"
     }
   }
 };
