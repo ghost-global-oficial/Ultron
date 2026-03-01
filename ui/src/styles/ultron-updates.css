@@ -1,0 +1,290 @@
+/* Ultron Updates Component */
+.ultron-updates {
+  padding: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.ultron-updates__header {
+  margin-bottom: 24px;
+}
+
+.ultron-updates__title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+}
+
+.ultron-updates__title svg {
+  width: 28px;
+  height: 28px;
+  color: var(--primary);
+}
+
+/* Status */
+.ultron-updates__status {
+  margin-bottom: 24px;
+}
+
+.ultron-updates__status-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.ultron-updates__status-item svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.ultron-updates__status-item--checking {
+  border-color: var(--primary);
+  background: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary);
+}
+
+.ultron-updates__status-item--checking svg {
+  animation: spin 1s linear infinite;
+}
+
+.ultron-updates__status-item--available {
+  border-color: var(--warning);
+  background: rgba(var(--warning-rgb), 0.1);
+  color: var(--warning);
+}
+
+.ultron-updates__status-item--downloading {
+  border-color: var(--primary);
+  background: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary);
+}
+
+.ultron-updates__status-item--installing {
+  border-color: var(--primary);
+  background: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary);
+}
+
+.ultron-updates__status-item--installing svg {
+  animation: spin 1s linear infinite;
+}
+
+.ultron-updates__status-item--uptodate {
+  border-color: var(--success);
+  background: rgba(var(--success-rgb), 0.1);
+  color: var(--success);
+}
+
+.ultron-updates__status-item--error {
+  border-color: var(--danger);
+  background: rgba(var(--danger-rgb), 0.1);
+  color: var(--danger);
+}
+
+/* Update Info */
+.ultron-updates__info {
+  margin-bottom: 24px;
+  padding: 20px;
+}
+
+.ultron-updates__info-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+}
+
+.ultron-updates__info-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.ultron-updates__info-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ultron-updates__info-date svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ultron-updates__release-notes {
+  margin-bottom: 20px;
+}
+
+.ultron-updates__release-notes h5 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.ultron-updates__release-notes-content {
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ultron-updates__actions {
+  display: flex;
+  gap: 12px;
+}
+
+.ultron-updates__actions .btn {
+  flex: 1;
+}
+
+/* Progress */
+.ultron-updates__progress {
+  margin-top: 16px;
+}
+
+.ultron-updates__progress-bar {
+  height: 8px;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.ultron-updates__progress-fill {
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.ultron-updates__progress-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: block;
+  text-align: center;
+}
+
+/* Error */
+.ultron-updates__error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  background: rgba(var(--danger-rgb), 0.1);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.ultron-updates__error svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Current Version */
+.ultron-updates__current {
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.ultron-updates__current-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+.ultron-updates__current-item:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.ultron-updates__current-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.ultron-updates__current-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.ultron-updates__current-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.ultron-updates__current-link:hover {
+  opacity: 0.8;
+}
+
+.ultron-updates__current-link svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Check Button */
+.ultron-updates__check {
+  display: flex;
+  justify-content: center;
+}
+
+.ultron-updates__check .btn {
+  min-width: 200px;
+}
+
+/* Animations */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ultron-updates {
+    padding: 16px;
+  }
+
+  .ultron-updates__title {
+    font-size: 20px;
+  }
+
+  .ultron-updates__actions {
+    flex-direction: column;
+  }
+
+  .ultron-updates__actions .btn {
+    width: 100%;
+  }
+}

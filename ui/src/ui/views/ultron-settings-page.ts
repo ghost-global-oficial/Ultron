@@ -206,6 +206,37 @@ export function renderUltronSettingsPage(props: UltronSettingsPageProps) {
         </div>
       </section>
 
+      <!-- Atualizações -->
+      <section class="ultron-settings-page__section card">
+        <h3 class="ultron-settings-page__section-title">
+          ${icons.download}
+          Atualizações do ULTRON
+        </h3>
+
+        <div class="ultron-settings-page__item">
+          <div class="ultron-settings-page__item-info">
+            <label class="ultron-settings-page__label">Sistema de atualizações</label>
+            <span class="ultron-settings-page__description">
+              Verifique e instale atualizações automaticamente do GitHub
+            </span>
+          </div>
+          <button class="btn btn-primary" @click=${() => {
+            // Abrir painel de atualizações
+            window.dispatchEvent(new CustomEvent('open-updates-panel'));
+          }}>
+            ${icons.download}
+            Gerenciar atualizações
+          </button>
+        </div>
+
+        <div class="ultron-settings-page__update-info">
+          <p class="ultron-settings-page__update-status">
+            ${icons.info}
+            Clique em "Gerenciar atualizações" para verificar novas versões
+          </p>
+        </div>
+      </section>
+
       <!-- Informações -->
       <section class="ultron-settings-page__section card">
         <h3 class="ultron-settings-page__section-title">

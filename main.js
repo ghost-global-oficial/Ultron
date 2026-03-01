@@ -1212,3 +1212,155 @@ ipcMain.handle('hive-is-active', async () => {
 });
 
 
+
+// ============================================
+// ULTRON UPDATES HANDLERS
+// ============================================
+
+const GITHUB_REPO = 'ghost-global-oficial/Ultron';
+const CURRENT_VERSION = '1.0.0';
+
+// Handler para verificar atualizações no GitHub
+ipcMain.handle('check-updates', async () => {
+  try {
+    console.log('=== VERIFICANDO ATUALIZAÇÕES NO GITHUB ===');
+    
+    // Buscar a última release no GitHub
+    const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
+    
+    if (!response.ok) {
+      throw new Error(`GitHub API retornou ${response.status}`);
+    }
+    
+    const release = await response.json();
+    
+    const latestVersion = release.tag_name.replace('v', '');
+    const currentVersion = CURRENT_VERSION;
+    
+    console.log('Versão atual:', currentVersion);
+    console.log('Última versão:', latestVersion);
+    
+    // Comparar versões
+    const isNewer = compareVersions(latestVersion, currentVersion) > 0;
+    
+    if (isNewer) {
+      console.log('✓ Nova versão disponível!');
+      
+      // Procurar asset do instalador Windows
+      const windowsAsset = release.assets.find(asset => 
+        asset.name.endsWith('.exe') || asset.name.includes('Setup')
+      );
+      
+      return {
+        success: true,
+        available: true,
+        currentVersion,
+        latestVersion,
+        releaseNotes: release.body || 'Sem notas de versão disponíveis.',
+        downloadUrl: windowsAsset?.browser_download_url || release.html_url,
+        publishedAt: release.published_at,
+        assetName: windowsAsset?.name || 'ULTRON-Setup.exe'
+      };
+    } else {
+      console.log('✓ Você já está na versão mais recente');
+      
+      return {
+        success: true,
+        available: false,
+        currentVersion,
+        latestVersion: currentVersion
+      };
+    }
+  } catch (error) {
+    console.error('❌ Erro ao verificar atualizações:', error);
+    return {
+      success: false,
+      error: error.message || 'Erro ao conectar com o GitHub'
+    };
+  }
+});
+
+// Handler para baixar e instalar atualização
+ipcMain.handle('install-update', async (event, { downloadUrl, assetName }) => {
+  try {
+    console.log('=== BAIXANDO ATUALIZAÇÃO ===');
+    console.log('URL:', downloadUrl);
+    console.log('Arquivo:', assetName);
+    
+    const https = require('https');
+    const downloadPath = path.join(os.tmpdir(), assetName);
+    
+    // Baixar o arquivo
+    const response = await fetch(downloadUrl, {
+      redirect: 'follow'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Erro ao baixar: ${response.status}`);
+    }
+    
+    const totalSize = parseInt(response.headers.get('content-length') || '0');
+    let downloadedSize = 0;
+    
+    const fileStream = fs.createWriteStream(downloadPath);
+    
+    // Stream com progresso
+    for await (const chunk of response.body) {
+      fileStream.write(chunk);
+      downloadedSize += chunk.length;
+      
+      const progress = Math.round((downloadedSize / totalSize) * 100);
+      
+      // Enviar progresso para a UI
+      mainWindow.webContents.send('update-download-progress', progress);
+    }
+    
+    fileStream.end();
+    
+    console.log('✓ Download concluído:', downloadPath);
+    
+    // Executar o instalador
+    console.log('✓ Iniciando instalador...');
+    
+    const { exec } = require('child_process');
+    
+    exec(`"${downloadPath}"`, (error) => {
+      if (error) {
+        console.error('Erro ao executar instalador:', error);
+      }
+    });
+    
+    // Fechar o ULTRON após iniciar o instalador
+    setTimeout(() => {
+      app.quit();
+    }, 1000);
+    
+    return {
+      success: true,
+      message: 'Instalador iniciado. O ULTRON será fechado.'
+    };
+    
+  } catch (error) {
+    console.error('❌ Erro ao instalar atualização:', error);
+    return {
+      success: false,
+      error: error.message || 'Erro ao baixar/instalar atualização'
+    };
+  }
+});
+
+// Função auxiliar para comparar versões
+function compareVersions(v1, v2) {
+  const parts1 = v1.split('.').map(Number);
+  const parts2 = v2.split('.').map(Number);
+  
+  for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+    const part1 = parts1[i] || 0;
+    const part2 = parts2[i] || 0;
+    
+    if (part1 > part2) return 1;
+    if (part1 < part2) return -1;
+  }
+  
+  return 0;
+}
