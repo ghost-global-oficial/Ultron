@@ -168,11 +168,11 @@ function encryptVault(vaultData) {
 
 function decryptVault(encryptedData) {
     const key = configState.authToken || 'ultron-default-key';
-    const encrypted = Buffer.from(encryptedData, 'base64').toString();
+    const encrypted = Buffer.from(encryptedData, 'base64');
     let decrypted = '';
     
     for (let i = 0; i < encrypted.length; i++) {
-        decrypted += String.fromCharCode(encrypted.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+        decrypted += String.fromCharCode(encrypted[i] ^ key.charCodeAt(i % key.length));
     }
     
     return JSON.parse(decrypted);
