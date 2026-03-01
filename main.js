@@ -10,35 +10,6 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// ============================================
-// INSTALAR SISTEMA DE SEGURANÇA UNIFICADO
-// ============================================
-console.log('🔒 Carregando Ultron Security System...');
-const { UltronSecuritySystem } = require('./ultron-security-system.cjs');
-
-// Verificar se S.H.I.E.L.D. está habilitado
-const shieldConfigPath = path.join(os.homedir(), '.ultron', 'shield-config.json');
-let shieldEnabled = false;
-
-try {
-    if (fs.existsSync(shieldConfigPath)) {
-        const shieldConfig = JSON.parse(fs.readFileSync(shieldConfigPath, 'utf8'));
-        shieldEnabled = shieldConfig.enabled === true;
-    }
-} catch (error) {
-    console.error('Erro ao verificar S.H.I.E.L.D.:', error);
-}
-
-// Instalar sistema de segurança se S.H.I.E.L.D. estiver habilitado
-if (shieldEnabled) {
-    console.log('🛡️ S.H.I.E.L.D. está habilitado - ativando proteções...');
-    const securitySystem = new UltronSecuritySystem();
-    securitySystem.start();
-} else {
-    console.log('ℹ️ S.H.I.E.L.D. desabilitado - sistema de segurança não instalado');
-}
-// ============================================
-
 let mainWindow;
 let gatewayProcess = null; // Manter referência ao processo do gateway
 
