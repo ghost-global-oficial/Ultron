@@ -561,7 +561,7 @@ function renderConnectorsSection(props: ManageConnectorsSettingsProps) {
                     <line x1="3.95" y1="6.06" x2="8.54" y2="14"/>
                     <line x1="10.88" y1="21.94" x2="15.46" y2="14"/>
                   </svg>`
-                : html`<img src="/${connector.icon}.png" alt="${connector.name}" />`}
+                : html`<img src="./${connector.icon}.png" alt="${connector.name}" />`}
             </div>
             <div class="manage-connectors-settings__item-content">
               <h3 class="manage-connectors-settings__item-title">${connector.name}</h3>
@@ -653,7 +653,7 @@ function renderIntegrationsSection(props: ManageConnectorsSettingsProps) {
           (model) => html`
             <div class="model-item ${model.connected ? 'model-item--connected' : ''}">
               <div class="model-item__icon">
-                <img src="/${model.icon}.png" alt="${model.provider}" />
+                <img src="./${model.icon}.png" alt="${model.provider}" />
               </div>
               <div class="model-item__content">
                 <div class="model-item__header">

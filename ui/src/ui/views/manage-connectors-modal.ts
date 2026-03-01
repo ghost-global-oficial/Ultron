@@ -98,7 +98,7 @@ export function renderManageConnectorsModal(props: ManageConnectorsModalProps) {
                           (connector) => html`
                             <div class="manage-connectors-modal__card">
                               <div class="manage-connectors-modal__card-icon">
-                                <img src="/${connector.icon}.png" alt="${connector.name}" />
+                                <img src="./${connector.icon}.png" alt="${connector.name}" />
                               </div>
                               <div class="manage-connectors-modal__card-content">
                                 <h4 class="manage-connectors-modal__card-title">${connector.name}</h4>
@@ -123,7 +123,7 @@ export function renderManageConnectorsModal(props: ManageConnectorsModalProps) {
                           (connector) => html`
                             <div class="manage-connectors-modal__card">
                               <div class="manage-connectors-modal__card-icon">
-                                <img src="/${connector.icon}.png" alt="${connector.name}" />
+                                <img src="./${connector.icon}.png" alt="${connector.name}" />
                               </div>
                               <div class="manage-connectors-modal__card-content">
                                 <h4 class="manage-connectors-modal__card-title">${connector.name}</h4>
@@ -175,7 +175,7 @@ export function renderManageConnectorsModal(props: ManageConnectorsModalProps) {
                   (api) => html`
                     <div class="manage-connectors-modal__api-card">
                       <div class="manage-connectors-modal__api-card-icon">
-                        <img src="/${api.icon}.png" alt="${api.name}" />
+                        <img src="./${api.icon}.png" alt="${api.name}" />
                       </div>
                       <div class="manage-connectors-modal__api-card-content">
                         <h4 class="manage-connectors-modal__api-card-title">${api.name}</h4>
@@ -219,7 +219,7 @@ export function renderManageConnectorsModal(props: ManageConnectorsModalProps) {
                   (mcp) => html`
                     <div class="manage-connectors-modal__api-card">
                       <div class="manage-connectors-modal__api-card-icon">
-                        <img src="/${mcp.icon}.png" alt="${mcp.name}" />
+                        <img src="./${mcp.icon}.png" alt="${mcp.name}" />
                       </div>
                       <div class="manage-connectors-modal__api-card-content">
                         <h4 class="manage-connectors-modal__api-card-title">${mcp.name}</h4>

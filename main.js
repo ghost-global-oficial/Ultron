@@ -142,91 +142,33 @@ async function startGatewayFromConfig(config) {
 
 // Função para carregar UI do chat
 function loadChatUIFromConfig(config) {
-  const uiPath = path.join(__dirname, 'dist', 'control-ui', 'index.html');
+  // CARREGAR A URL DO GATEWAY DIRETAMENTE NO ELECTRON
+  // O gateway serve a UI web em http://localhost:PORT
   
-  if (fs.existsSync(uiPath)) {
-    let html = fs.readFileSync(uiPath, 'utf8');
-    
-    // Ler o script de tradução
-    const i18nScriptPath = path.join(__dirname, 'chat-i18n.js');
-    let i18nScript = '';
-    if (fs.existsSync(i18nScriptPath)) {
-      i18nScript = fs.readFileSync(i18nScriptPath, 'utf8');
-      console.log('✓ Script de tradução carregado para auto-start');
-    }
-    
-    // Ler o script do S.H.I.E.L.D. monitor
-    const shieldMonitorPath = path.join(__dirname, 'shield-monitor.js');
-    let shieldMonitorScript = '';
-    if (fs.existsSync(shieldMonitorPath)) {
-      shieldMonitorScript = fs.readFileSync(shieldMonitorPath, 'utf8');
-      console.log('✓ Script do S.H.I.E.L.D. monitor carregado');
-    }
-    
-    // Ler o S.H.I.E.L.D. JavaScript Engine
-    const shieldEnginePath = path.join(__dirname, 'shield-js-engine.js');
-    let shieldEngineScript = '';
-    if (fs.existsSync(shieldEnginePath)) {
-      shieldEngineScript = fs.readFileSync(shieldEnginePath, 'utf8');
-      console.log('✓ S.H.I.E.L.D. JavaScript Engine carregado');
-    }
-    
-    const wsUrl = `ws://localhost:${config.gateway.port}`;
-    const configScript = `
-      <script>
-        // SALVAR CONFIGURAÇÕES NO LOCALSTORAGE
-        console.log('=== SALVANDO CONFIGURAÇÕES NO LOCALSTORAGE ===');
-        
-        const settings = {
-          gatewayUrl: '${wsUrl}',
-          token: '${config.gateway.auth.token}',
-          sessionKey: 'agent:main:main',
-          lastActiveSessionKey: 'agent:main:main',
-          theme: 'dark',
-          chatFocusMode: false,
-          chatShowThinking: true,
-          splitRatio: 0.6,
-          navCollapsed: false,
-          navGroupsCollapsed: {}
-        };
-        localStorage.setItem('ultron.control.settings.v1', JSON.stringify(settings));
-        console.log('✓ Settings saved to localStorage');
-        console.log('✓ SessionKey:', 'agent:main:main');
-        console.log('✓ Token:', '${config.gateway.auth.token}'.substring(0, 16) + '...');
-        console.log('✓ Gateway URL:', '${wsUrl}');
-        
-        // Definir variáveis globais também (fallback)
-        window.__ULTRON_GATEWAY_URL__ = '${wsUrl}';
-        window.__ULTRON_GATEWAY_TOKEN__ = '${config.gateway.auth.token}';
-        window.__ULTRON_CONTROL_UI_BASE_PATH__ = '';
-        window.__ULTRON_ASSISTANT_NAME__ = 'Ultron';
-        window.__ULTRON_ASSISTANT_AVATAR__ = '';
-        
-        console.log('=== ULTRON CONFIG INJECTED ===');
-        console.log('Gateway URL:', window.__ULTRON_GATEWAY_URL__);
-        console.log('Gateway Token:', '${config.gateway.auth.token}'.substring(0, 16) + '...');
-      </script>
-      ${i18nScript ? `<script>\n${i18nScript}\n</script>` : ''}
-      ${shieldEngineScript ? `<script>\n${shieldEngineScript}\n</script>` : ''}
-      ${shieldMonitorScript ? `<script>\n${shieldMonitorScript}\n</script>` : ''}
-    `;
-    
-    const firstScriptIndex = html.indexOf('<script');
-    if (firstScriptIndex !== -1) {
-      html = html.slice(0, firstScriptIndex) + configScript + html.slice(firstScriptIndex);
-    } else {
-      html = html.replace('</head>', configScript + '</head>');
-    }
-    
-    const tempPath = path.join(__dirname, 'dist', 'control-ui', 'index-temp.html');
-    fs.writeFileSync(tempPath, html);
-    mainWindow.loadFile(tempPath);
+  // Verificar se é remoto ou local
+  let chatUrl;
+  if (config.gateway?.mode === 'remote' || config.ultron?.remote) {
+    // Gateway remoto - usar a URL fornecida
+    const baseUrl = config.gateway.url || `http://localhost:${config.gateway.port}`;
+    chatUrl = `${baseUrl}/?token=${encodeURIComponent(config.gateway.auth.token)}`;
+    console.log('✓ Conectando ao gateway remoto');
   } else {
-    const indexPath = path.join(__dirname, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      mainWindow.loadFile(indexPath);
-    }
+    // Gateway local - usar localhost
+    chatUrl = `http://localhost:${config.gateway.port}/?token=${encodeURIComponent(config.gateway.auth.token)}`;
+    console.log('✓ Carregando gateway local');
   }
+  
+  console.log('✓ Carregando chat na janela Electron');
+  console.log('URL:', chatUrl.replace(/token=[^&]+/, 'token=***'));
+  
+  mainWindow.loadURL(chatUrl).then(() => {
+    console.log('✓✓✓ Chat carregado com sucesso! ✓✓✓');
+    console.log('URL da janela:', mainWindow.webContents.getURL().replace(/token=[^&]+/, 'token=***'));
+  }).catch(err => {
+    console.error('❌ Erro ao carregar chat:', err);
+    console.error('Stack:', err.stack);
+    console.error('URL tentada:', chatUrl.replace(/token=[^&]+/, 'token=***'));
+  });
 }
 
 function createWindow() {
@@ -348,18 +290,27 @@ app.whenReady().then(async () => {
       // Criar janela
       createWindow();
       
-      // Iniciar gateway automaticamente com a configuração salva
-      console.log('=== INICIANDO GATEWAY AUTOMATICAMENTE ===');
-      const result = await startGatewayFromConfig(savedConfig);
-      
-      if (result.success) {
-        console.log('✓ Gateway iniciado automaticamente!');
+      // Verificar se é uma configuração remota
+      if (savedConfig.gateway?.mode === 'remote' || savedConfig.ultron?.remote) {
+        console.log('=== CONECTANDO A ULTRON REMOTO ===');
+        console.log('Gateway URL:', savedConfig.gateway.url);
         
-        // Carregar UI do chat
+        // Não iniciar gateway local, apenas carregar a UI conectada ao remoto
         loadChatUIFromConfig(savedConfig);
       } else {
-        console.error('❌ Erro ao iniciar gateway:', result.message);
-        // Mesmo com erro, manter a janela aberta para o usuário reconfigurar
+        // Iniciar gateway local automaticamente com a configuração salva
+        console.log('=== INICIANDO GATEWAY LOCAL AUTOMATICAMENTE ===');
+        const result = await startGatewayFromConfig(savedConfig);
+        
+        if (result.success) {
+          console.log('✓ Gateway iniciado automaticamente!');
+          
+          // Carregar UI do chat
+          loadChatUIFromConfig(savedConfig);
+        } else {
+          console.error('❌ Erro ao iniciar gateway:', result.message);
+          // Mesmo com erro, manter a janela aberta para o usuário reconfigurar
+        }
       }
     } catch (error) {
       console.error('❌ Erro ao processar configuração:', error);
@@ -1101,4 +1052,163 @@ ipcMain.handle('delete-ultron-config', async () => {
     };
   }
 });
+
+// ============================================
+// HIVE P2P HANDLERS
+// ============================================
+
+let hiveManager = null;
+
+// IPC Handler para criar/juntar colmeia
+ipcMain.handle('hive-create-or-join', async (event, config) => {
+  try {
+    console.log('=== CRIANDO/JUNTANDO COLMEIA P2P ===');
+    console.log('Config:', config);
+    
+    if (!hiveManager) {
+      const { HiveP2PManager } = await import('./dist/hive/hive-p2p-manager.js');
+      hiveManager = new HiveP2PManager();
+      
+      // Eventos da colmeia
+      hiveManager.on('member-joined', (peer) => {
+        console.log('Membro entrou na colmeia:', peer);
+        mainWindow.webContents.send('hive-member-joined', peer);
+      });
+      
+      hiveManager.on('member-left', (peerId) => {
+        console.log('Membro saiu da colmeia:', peerId);
+        mainWindow.webContents.send('hive-member-left', peerId);
+      });
+      
+      hiveManager.on('task-received', (task) => {
+        console.log('Tarefa recebida:', task);
+        mainWindow.webContents.send('hive-task-received', task);
+      });
+      
+      hiveManager.on('data-received', (data, fromPeerId) => {
+        console.log('Dados recebidos de:', fromPeerId);
+        mainWindow.webContents.send('hive-data-received', { data, fromPeerId });
+      });
+      
+      hiveManager.on('hive-active', () => {
+        console.log('✓ Colmeia ativa!');
+        mainWindow.webContents.send('hive-status-changed', { active: true });
+      });
+      
+      hiveManager.on('hive-inactive', () => {
+        console.log('✓ Colmeia inativa');
+        mainWindow.webContents.send('hive-status-changed', { active: false });
+      });
+    }
+    
+    await hiveManager.createOrJoinHive(config);
+    
+    console.log('✓ Colmeia criada/juntada com sucesso!');
+    
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Erro ao criar/juntar colmeia:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// IPC Handler para sair da colmeia
+ipcMain.handle('hive-leave', async () => {
+  try {
+    if (hiveManager) {
+      hiveManager.leaveHive();
+      console.log('✓ Saiu da colmeia');
+      return { success: true };
+    }
+    return { success: false, error: 'Colmeia não está ativa' };
+  } catch (error) {
+    console.error('❌ Erro ao sair da colmeia:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// IPC Handler para obter membros
+ipcMain.handle('hive-get-members', async () => {
+  try {
+    if (hiveManager) {
+      const members = hiveManager.getMembers();
+      return { success: true, members };
+    }
+    return { success: false, members: [] };
+  } catch (error) {
+    console.error('❌ Erro ao obter membros:', error);
+    return { success: false, members: [], error: error.message };
+  }
+});
+
+// IPC Handler para obter peers locais
+ipcMain.handle('hive-get-local-peers', async () => {
+  try {
+    if (hiveManager) {
+      const peers = hiveManager.getLocalPeers();
+      return { success: true, peers };
+    }
+    return { success: false, peers: [] };
+  } catch (error) {
+    console.error('❌ Erro ao obter peers locais:', error);
+    return { success: false, peers: [], error: error.message };
+  }
+});
+
+// IPC Handler para enviar mensagem
+ipcMain.handle('hive-send-message', async (event, { type, payload, to }) => {
+  try {
+    if (hiveManager) {
+      hiveManager.sendMessage(type, payload, to);
+      return { success: true };
+    }
+    return { success: false, error: 'Colmeia não está ativa' };
+  } catch (error) {
+    console.error('❌ Erro ao enviar mensagem:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// IPC Handler para sincronizar contexto
+ipcMain.handle('hive-sync-context', async (event, context) => {
+  try {
+    if (hiveManager) {
+      hiveManager.syncContext(context);
+      return { success: true };
+    }
+    return { success: false, error: 'Colmeia não está ativa' };
+  } catch (error) {
+    console.error('❌ Erro ao sincronizar contexto:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// IPC Handler para distribuir tarefa
+ipcMain.handle('hive-distribute-task', async (event, task) => {
+  try {
+    if (hiveManager) {
+      hiveManager.distributeTask(task);
+      return { success: true };
+    }
+    return { success: false, error: 'Colmeia não está ativa' };
+  } catch (error) {
+    console.error('❌ Erro ao distribuir tarefa:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// IPC Handler para verificar status da colmeia
+ipcMain.handle('hive-is-active', async () => {
+  try {
+    if (hiveManager) {
+      const active = hiveManager.isHiveActive();
+      return { success: true, active };
+    }
+    return { success: true, active: false };
+  } catch (error) {
+    console.error('❌ Erro ao verificar status:', error);
+    return { success: false, active: false, error: error.message };
+  }
+});
+
 

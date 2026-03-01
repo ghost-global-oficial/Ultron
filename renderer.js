@@ -450,8 +450,218 @@ function renderWelcome(content) {
                 </ul>
             </div>
         </div>
-        <button onclick="startConfiguration()">${t('welcome.startButton')}</button>
+        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <button onclick="startConfiguration()">${t('welcome.startButton')}</button>
+            <button class="secondary" onclick="showJoinExistingUltron()">${t('welcome.joinExisting') || 'Entrar em ULTRON Existente'}</button>
+        </div>
     `;
+}
+
+function showJoinExistingUltron() {
+    const content = document.getElementById('config-content');
+    content.innerHTML = `
+        <div class="terminal-line">
+            <div class="question">Entrar em ULTRON Existente</div>
+            <p style="color: #888; margin: 15px 0;">
+                Insira as credenciais do ULTRON que deseja acessar. Estas informações podem ser encontradas na seção "Conta" do ULTRON remoto.
+            </p>
+        </div>
+        
+        <div class="input-group">
+            <label><strong>ID de Identificação</strong></label>
+            <input type="text" id="join-ultron-id" placeholder="ULTRON-XXXXXXXX" />
+        </div>
+        
+        <div class="input-group">
+            <label><strong>Token de Acesso</strong></label>
+            <input type="password" id="join-ultron-token" placeholder="tk_xxxxxxxxxxxxxxxxxxxxx" />
+        </div>
+        
+        <div class="input-group">
+            <label><strong>Palavra-passe 1</strong></label>
+            <input type="text" id="join-ultron-pass1" placeholder="palavra-palavra-1234" />
+        </div>
+        
+        <div class="input-group">
+            <label><strong>Palavra-passe 2</strong></label>
+            <input type="text" id="join-ultron-pass2" placeholder="palavra-palavra-5678" />
+        </div>
+        
+        <div class="input-group">
+            <label><strong>Endereço do Gateway (opcional)</strong></label>
+            <input type="text" id="join-ultron-address" placeholder="http://192.168.1.100:18789 ou deixe em branco para auto-detectar" />
+            <small style="display: block; margin-top: 5px;">Se deixado em branco, tentaremos conectar automaticamente usando as credenciais</small>
+        </div>
+        
+        <div id="join-error" class="error-message hidden"></div>
+        <div id="join-success" class="success-message hidden"></div>
+        
+        <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
+            <button class="secondary" onclick="render()">Voltar</button>
+            <button onclick="connectToExistingUltron()">Conectar</button>
+        </div>
+    `;
+}
+
+async function connectToExistingUltron() {
+    const ultronId = document.getElementById('join-ultron-id').value.trim();
+    const token = document.getElementById('join-ultron-token').value.trim();
+    const pass1 = document.getElementById('join-ultron-pass1').value.trim();
+    const pass2 = document.getElementById('join-ultron-pass2').value.trim();
+    const address = document.getElementById('join-ultron-address').value.trim();
+    
+    const errorDiv = document.getElementById('join-error');
+    const successDiv = document.getElementById('join-success');
+    
+    // Limpar mensagens anteriores
+    errorDiv.classList.add('hidden');
+    successDiv.classList.add('hidden');
+    
+    // Validações
+    if (!ultronId || !token || !pass1 || !pass2) {
+        errorDiv.textContent = 'Por favor, preencha todos os campos obrigatórios.';
+        errorDiv.classList.remove('hidden');
+        return;
+    }
+    
+    if (!ultronId.startsWith('ULTRON-')) {
+        errorDiv.textContent = 'ID inválido. Deve começar com "ULTRON-"';
+        errorDiv.classList.remove('hidden');
+        return;
+    }
+    
+    if (!token.startsWith('tk_')) {
+        errorDiv.textContent = 'Token inválido. Deve começar com "tk_"';
+        errorDiv.classList.remove('hidden');
+        return;
+    }
+    
+    updateStatus('Conectando ao ULTRON remoto...');
+    
+    try {
+        // Determinar o endereço do gateway
+        let gatewayUrl = address;
+        if (!gatewayUrl) {
+            // Se não fornecido, tentar descobrir via rede local ou usar localhost
+            gatewayUrl = 'http://localhost:18789';
+        }
+        
+        // Validar e normalizar formato do endereço
+        if (!gatewayUrl.startsWith('http://') && !gatewayUrl.startsWith('https://')) {
+            gatewayUrl = 'http://' + gatewayUrl;
+        }
+        
+        // Remover barra final se existir
+        gatewayUrl = gatewayUrl.replace(/\/$/, '');
+        
+        successDiv.textContent = `Conectando a ${gatewayUrl}...`;
+        successDiv.classList.remove('hidden');
+        
+        // Tentar conectar ao gateway remoto com timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
+        
+        let response;
+        try {
+            // Tentar endpoint de health primeiro
+            response = await fetch(`${gatewayUrl}/health`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'X-OpenClaw-Token': token
+                },
+                signal: controller.signal
+            });
+        } catch (fetchError) {
+            // Se falhar, tentar endpoint raiz
+            try {
+                response = await fetch(gatewayUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'X-OpenClaw-Token': token
+                    },
+                    signal: controller.signal
+                });
+            } catch (rootError) {
+                throw new Error(`Não foi possível conectar ao gateway em ${gatewayUrl}`);
+            }
+        } finally {
+            clearTimeout(timeoutId);
+        }
+        
+        if (!response || (!response.ok && response.status !== 401)) {
+            // 401 é aceitável - significa que o gateway existe mas precisa de autenticação
+            throw new Error(`Gateway respondeu com status ${response?.status || 'desconhecido'}`);
+        }
+        
+        // Extrair porta da URL
+        let port = 18789;
+        try {
+            const urlObj = new URL(gatewayUrl);
+            port = urlObj.port ? parseInt(urlObj.port) : (urlObj.protocol === 'https:' ? 443 : 80);
+        } catch (e) {
+            console.warn('Erro ao extrair porta, usando padrão 18789');
+        }
+        
+        // Salvar configuração para conectar ao ULTRON remoto
+        const remoteConfig = {
+            gateway: {
+                mode: 'remote',
+                url: gatewayUrl,
+                port: port,
+                auth: {
+                    mode: 'token',
+                    token: token
+                }
+            },
+            ultron: {
+                id: ultronId,
+                passphrase1: pass1,
+                passphrase2: pass2,
+                remote: true
+            },
+            env: {
+                vars: {}
+            }
+        };
+        
+        // Salvar configuração
+        const ultronDir = path.join(os.homedir(), '.ultron');
+        if (!fs.existsSync(ultronDir)) {
+            fs.mkdirSync(ultronDir, { recursive: true });
+        }
+        
+        fs.writeFileSync(configPath, JSON.stringify(remoteConfig, null, 2));
+        
+        successDiv.textContent = '✓ Conectado com sucesso! Carregando interface...';
+        updateStatus('Conectado ao ULTRON remoto');
+        
+        // Aguardar um pouco e então carregar a UI
+        setTimeout(() => {
+            ipcRenderer.send('load-chat-ui', {
+                port: remoteConfig.gateway.port,
+                token: remoteConfig.gateway.auth.token
+            });
+        }, 1500);
+        
+    } catch (error) {
+        console.error('Erro ao conectar:', error);
+        
+        let errorMessage = 'Erro ao conectar: ';
+        if (error.name === 'AbortError') {
+            errorMessage += 'Tempo de conexão esgotado. Verifique se o endereço está correto e se o gateway está acessível.';
+        } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            errorMessage += 'Não foi possível alcançar o gateway. Verifique sua conexão de rede e o endereço fornecido.';
+        } else {
+            errorMessage += error.message;
+        }
+        
+        errorDiv.textContent = errorMessage;
+        errorDiv.classList.remove('hidden');
+        successDiv.classList.add('hidden');
+        updateStatus('Erro ao conectar');
+    }
 }
 
 function renderLanguageSelection(content) {

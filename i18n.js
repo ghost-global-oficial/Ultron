@@ -11,6 +11,7 @@ const translations = {
         'welcome.port': 'Porta: 18789 (padrão)',
         'welcome.auth': 'Autenticação: Token (gerado automaticamente)',
         'welcome.startButton': 'Iniciar Configuração →',
+        'welcome.joinExisting': 'Entrar em ULTRON Existente',
         
         // Language Selection
         'language.title': 'Escolha o Idioma',
@@ -198,6 +199,7 @@ const translations = {
         'welcome.port': 'Port: 18789 (default)',
         'welcome.auth': 'Authentication: Token (auto-generated)',
         'welcome.startButton': 'Start Configuration →',
+        'welcome.joinExisting': 'Join Existing ULTRON',
         
         // Language Selection
         'language.title': 'Choose Language',

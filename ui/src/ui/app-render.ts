@@ -671,10 +671,23 @@ export function renderApp(state: AppViewState) {
           state.tab === "agents"
             ? renderAgentsPage({
                 agents: state.agentsList?.agents ?? [],
+                // Chat-like props
+                draft: state.draft,
+                connected: state.connected,
+                sending: state.sending,
+                canSend: state.canSend,
+                messages: state.messages,
+                stream: state.stream,
+                attachments: state.attachments,
+                // Event handlers
+                onDraftChange: (next: string) => state.handleDraftChange(next),
+                onSend: () => state.handleSend(),
                 onCreateAgent: () => state.handleCreateAgent(),
                 onEditAgent: (id: string) => state.handleEditAgent(id),
                 onDeleteAgent: (id: string) => state.handleDeleteAgent(id),
                 onToggleAgent: (id: string) => state.handleToggleAgent(id),
+                onAttachmentsChange: (attachments) => state.handleAttachmentsChange(attachments),
+                onRefresh: () => state.handleRefresh(),
               })
             : nothing
         }
