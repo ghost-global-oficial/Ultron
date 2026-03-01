@@ -147,6 +147,12 @@ function loadExistingConfig() {
             // Shield removido - não carregar mais shield-config.json
             
             updateStatus(t('status.ready'));
+            
+            // Carregar chat automaticamente se já existe configuração
+            console.log('✓ Configuração existente detectada, carregando chat automaticamente...');
+            setTimeout(() => {
+                openChatWithToken();
+            }, 500);
         }
     } catch (error) {
         console.error('Erro ao carregar config:', error);
