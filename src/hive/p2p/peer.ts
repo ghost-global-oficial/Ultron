@@ -40,13 +40,16 @@ export class HivePeer extends EventEmitter {
   }
 
   private generateKeypair(credentials: any) {
-    // Derivar chaves das credenciais do ULTRON
+    // Derivar seed das credenciais do ULTRON
     const seed = crypto
       .createHash('sha256')
       .update(credentials.id + credentials.passphrase1 + credentials.passphrase2)
       .digest();
     
-    const keyPair = crypto.generateKeyPairSync('ed25519', {
+    // Gerar par de chaves RSA para criptografia E2E
+    // (Ed25519 é apenas para assinatura, RSA permite criptografia)
+    const keyPair = crypto.generateKeyPairSync('rsa', {
+      modulusLength: 2048,
       publicKeyEncoding: { type: 'spki', format: 'der' },
       privateKeyEncoding: { type: 'pkcs8', format: 'der' }
     });
