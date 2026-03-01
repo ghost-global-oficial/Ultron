@@ -115,10 +115,13 @@ const modelsByProvider = {
 
 // Carregar configuração existente se houver
 function loadExistingConfig() {
+    console.log('=== LOAD EXISTING CONFIG ===');
     try {
         if (fs.existsSync(configPath)) {
+            console.log('✓ Arquivo de configuração encontrado:', configPath);
             const data = fs.readFileSync(configPath, 'utf8');
             currentConfig = JSON.parse(data);
+            console.log('✓ Configuração carregada com sucesso');
             
             // Carregar idioma do localStorage (não do arquivo de config)
             const savedLanguage = localStorage.getItem('ultron.language');
@@ -136,12 +139,18 @@ function loadExistingConfig() {
             const vaultPath = path.join(path.dirname(configPath), 'vault.json');
             if (fs.existsSync(vaultPath)) {
                 try {
+                    console.log('✓ Arquivo vault encontrado:', vaultPath);
                     const vaultData = JSON.parse(fs.readFileSync(vaultPath, 'utf8'));
-                    configState.vault = decryptVault(vaultData.encrypted);
-                    console.log('✓ Vault carregado e descriptografado do arquivo separado');
+                    // CRIPTOGRAFIA TEMPORARIAMENTE DESABILITADA PARA DEBUG
+                    configState.vault = vaultData.data || vaultData.encrypted || {};
+                    console.log('✓ Vault carregado (sem criptografia - modo debug)');
                 } catch (error) {
-                    console.error('Erro ao carregar vault:', error);
+                    console.error('⚠️ Erro ao carregar vault (continuando sem vault):', error);
+                    // Se falhar, inicializar vault vazio
+                    configState.vault = {};
                 }
+            } else {
+                console.log('ℹ️ Nenhum arquivo vault encontrado (normal para primeira execução)');
             }
             
             // Shield removido - não carregar mais shield-config.json
@@ -151,11 +160,17 @@ function loadExistingConfig() {
             // Carregar chat automaticamente se já existe configuração
             console.log('✓ Configuração existente detectada, carregando chat automaticamente...');
             setTimeout(() => {
+                console.log('⏰ Timeout executado, chamando openChatWithToken()...');
                 openChatWithToken();
             }, 500);
+        } else {
+            console.log('ℹ️ Nenhuma configuração existente encontrada');
         }
     } catch (error) {
-        console.error('Erro ao carregar config:', error);
+        console.error('❌ Erro ao carregar config:', error);
+        console.error('Stack:', error.stack);
+        // Mesmo com erro, tentar continuar
+        updateStatus('Erro ao carregar configuração');
     }
 }
 
@@ -266,13 +281,15 @@ function saveConfig() {
         if (hasVaultData) {
             try {
                 const vaultPath = path.join(configDir, 'vault.json');
+                // CRIPTOGRAFIA TEMPORARIAMENTE DESABILITADA PARA DEBUG
                 const vaultData = {
-                    encrypted: encryptVault(configState.vault),
+                    data: configState.vault,
                     version: '1.0.0',
-                    createdAt: new Date().toISOString()
+                    createdAt: new Date().toISOString(),
+                    encrypted: false // Flag para indicar que não está criptografado
                 };
                 fs.writeFileSync(vaultPath, JSON.stringify(vaultData, null, 2));
-                console.log('✓ Vault criptografado e salvo em arquivo separado:', vaultPath);
+                console.log('✓ Vault salvo sem criptografia (modo debug):', vaultPath);
             } catch (error) {
                 console.error('Erro ao salvar vault:', error);
             }
