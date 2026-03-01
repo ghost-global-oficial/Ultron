@@ -7,7 +7,12 @@
   "scripts": {
     "start": "electron .",
     "build": "tsc -p tsconfig.json --noEmit false || true && node --import tsx scripts/copy-hook-metadata.ts && node --import tsx scripts/write-build-info.ts",
-    "package": "electron-builder"
+    "build:ui": "cd ui && npm run build && cd ..",
+    "build:all": "npm run build && npm run build:ui",
+    "package": "electron-builder",
+    "package:win": "npm run build:all && electron-builder --win --x64",
+    "package:portable": "npm run build:all && electron-builder --win portable --x64",
+    "dist": "npm run build:all && electron-builder --win --x64"
   },
   "dependencies": {
     "@agentclientprotocol/sdk": "0.13.1",
@@ -82,6 +87,11 @@
   "build": {
     "appId": "com.ultron.app",
     "productName": "Ultron",
+    "copyright": "Copyright © 2026 Ultron",
+    "directories": {
+      "output": "release",
+      "buildResources": "assets"
+    },
     "win": {
       "target": [
         {
@@ -89,22 +99,67 @@
           "arch": [
             "x64"
           ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
         }
-      ]
+      ],
+      "icon": "assets/icon.png",
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "publisherName": "Ultron"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Ultron"
+      "shortcutName": "Ultron",
+      "installerIcon": "assets/icon.png",
+      "uninstallerIcon": "assets/icon.png",
+      "installerHeaderIcon": "assets/icon.png",
+      "deleteAppDataOnUninstall": false,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "menuCategory": true,
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable-${version}.${ext}"
     },
     "files": [
       "dist/**/*",
+      "ui/dist/**/*",
       "main.js",
       "index.html",
       "renderer.js",
-      "package.json"
+      "i18n.js",
+      "chat-i18n.js",
+      "package.json",
+      "node_modules/**/*",
+      "!node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!node_modules/*.d.ts",
+      "!node_modules/.bin",
+      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+      "!.editorconfig",
+      "!**/._*",
+      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+      "!**/{appveyor.yml,.travis.yml,circle.yml}",
+      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+    ],
+    "extraResources": [
+      {
+        "from": "assets",
+        "to": "assets",
+        "filter": [
+          "**/*"
+        ]
+      }
     ]
   }
 }

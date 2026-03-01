@@ -35,17 +35,30 @@
 
 ## 📦 Installation
 
-### Prerequisites
+### For End Users (Quick Install) ⚡
+
+**Download ready-to-use installer** - No technical knowledge required!
+
+1. **Download**: [Ultron-Setup-1.0.0.exe](https://github.com/ghost-global-oficial/Ultron/releases/latest) (~250 MB)
+2. **Install**: Double-click the downloaded file and follow the wizard
+3. **Configure**: Choose your AI provider and enter your API key
+4. **Done**: Start chatting with your AI assistant!
+
+📖 **Detailed guide**: See [INSTALACAO_RAPIDA.md](INSTALACAO_RAPIDA.md) for step-by-step instructions
+
+### For Developers (From Source)
+
+#### Prerequisites
 - **Node.js**: Version 22 or higher
 - **npm**: Comes with Node.js
 - **Windows**: Tested on Windows 10/11
 - **macOS/Linux**: Should work but not extensively tested
 
-### Quick Start
+#### Quick Start
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/ultron.git
+git clone https://github.com/ghost-global-oficial/Ultron.git
 cd ultron
 
 # Install dependencies
@@ -63,6 +76,22 @@ npm run build
 # Start ULTRON
 npm start
 ```
+
+#### Building Installers
+
+```bash
+# Build everything and create Windows installer
+npm run dist
+
+# Or use the automated script
+build-installer.bat
+
+# Installers will be in: release/
+# - Ultron-Setup-1.0.0.exe (NSIS installer)
+# - Ultron-Portable-1.0.0.exe (Portable version)
+```
+
+📖 **Distribution guide**: See [GUIA_DISTRIBUICAO.md](GUIA_DISTRIBUICAO.md) for complete distribution instructions
 
 ### First Run
 

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download ULTRON - Assistente de IA Pessoal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+        }
+
+        header h1 {
+            font-size: 3.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.5em;
+            opacity: 0.9;
+        }
+
+        .download-section {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            margin: 40px auto;
+            max-width: 900px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .download-section h2 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 40px 0;
+        }
+
+        .download-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 40px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .download-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .download-button.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .download-button.secondary:hover {
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+        }
+
+        .version-info {
+            text-align: center;
+            color: #666;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin: 50px 0;
+        }
+
+        .feature {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            transition: transform 0.3s;
+        }
+
+        .feature:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .feature h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .requirements {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 40px 0;
+        }
+
+        .requirements h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .requirements ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .requirements li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .requirements li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .steps {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 40px 0;
+        }
+
+        .steps h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .steps ol {
+            padding-left: 20px;
+        }
+
+        .steps li {
+            padding: 10px 0;
+            font-size: 1.1em;
+        }
+
+        .help-section {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            margin: 40px 0;
+        }
+
+        .help-section h3 {
+            margin-bottom: 20px;
+        }
+
+        .help-section a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: bold;
+            border-bottom: 2px solid white;
+            padding-bottom: 2px;
+        }
+
+        .help-section a:hover {
+            opacity: 0.8;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: white;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2.5em;
+            }
+
+            .download-section {
+                padding: 30px 20px;
+            }
+
+            .download-buttons {
+                flex-direction: column;
+            }
+
+            .download-button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 ULTRON</h1>
+            <p>Seu Assistente de IA Pessoal</p>
+        </header>
+
+        <div class="download-section">
+            <h2>Download para Windows</h2>
+            
+            <div class="download-buttons">
+                <a href="https://github.com/ghost-global-oficial/Ultron/releases/download/v1.0.0/Ultron-Setup-1.0.0.exe" 
+                   class="download-button">
+                    📥 Instalador Completo
+                    <small style="display: block; font-size: 0.7em; opacity: 0.8;">~250 MB</small>
+                </a>
+                
+                <a href="https://github.com/ghost-global-oficial/Ultron/releases/download/v1.0.0/Ultron-Portable-1.0.0.exe" 
+                   class="download-button secondary">
+                    💾 Versão Portátil
+                    <small style="display: block; font-size: 0.7em; opacity: 0.8;">~250 MB</small>
+                </a>
+            </div>
+
+            <div class="version-info">
+                <p><strong>Versão:</strong> 1.0.0 | <strong>Sistema:</strong> Windows 10/11 (64-bit)</p>
+                <p><strong>Última atualização:</strong> 01 de Março de 2026</p>
+            </div>
+        </div>
+
+        <div class="download-section">
+            <h2>✨ Recursos Principais</h2>
+            
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">🤖</div>
+                    <h3>Multi-Provedor</h3>
+                    <p>Suporte para Google Gemini, Claude, OpenRouter, Grok e OpenAI</p>
+                </div>
+
+                <div class="feature">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Colmeia P2P</h3>
+                    <p>Conecte múltiplos ULTRONs para trabalhar em conjunto</p>
+                </div>
+
+                <div class="feature">
+                    <div class="feature-icon">🔐</div>
+                    <h3>Vault Seguro</h3>
+                    <p>Armazene senhas e chaves API com criptografia</p>
+                </div>
+
+                <div class="feature">
+                    <div class="feature-icon">👥</div>
+                    <h3>Multi-Agente</h3>
+                    <p>Crie e gerencie múltiplos agentes de IA</p>
+                </div>
+
+                <div class="feature">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Interface Moderna</h3>
+                    <p>Design intuitivo e fácil de usar</p>
+                </div>
+
+                <div class="feature">
+                    <div class="feature-icon">🔒</div>
+                    <h3>100% Local</h3>
+                    <p>Seus dados ficam no seu computador</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="download-section">
+            <div class="requirements">
+                <h3>📋 Requisitos do Sistema</h3>
+                <ul>
+                    <li>Windows 10 ou Windows 11 (64-bit)</li>
+                    <li>4 GB de RAM (8 GB recomendado)</li>
+                    <li>500 MB de espaço livre em disco</li>
+                    <li>Conexão com a internet</li>
+                    <li>Chave API de um provedor de IA (Google, Claude, etc.)</li>
+                </ul>
+            </div>
+
+            <div class="steps">
+                <h3>🚀 Como Instalar</h3>
+                <ol>
+                    <li>Clique no botão "Instalador Completo" acima</li>
+                    <li>Aguarde o download terminar (~250 MB)</li>
+                    <li>Execute o arquivo <code>Ultron-Setup-1.0.0.exe</code></li>
+                    <li>Siga as instruções do assistente de instalação</li>
+                    <li>Pronto! ULTRON está instalado e pronto para usar</li>
+                </ol>
+            </div>
+
+            <div class="steps">
+                <h3>🔑 Primeira Configuração</h3>
+                <ol>
+                    <li>Abra o ULTRON (atalho no Desktop ou Menu Iniciar)</li>
+                    <li>Escolha seu idioma (Português ou Inglês)</li>
+                    <li>Selecione seu provedor de IA preferido</li>
+                    <li>Insira sua chave API do provedor</li>
+                    <li>Configure o gateway (porta padrão: 18789)</li>
+                    <li>Comece a conversar com seu assistente!</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h3>❓ Precisa de Ajuda?</h3>
+            <p>
+                <a href="https://github.com/ghost-global-oficial/Ultron">📚 Documentação</a>
+                <a href="https://github.com/ghost-global-oficial/Ultron/issues">🐛 Reportar Problema</a>
+                <a href="https://github.com/ghost-global-oficial/Ultron/blob/main/README.md">📖 README</a>
+            </p>
+        </div>
+
+        <footer>
+            <p>ULTRON - Baseado em OpenClaw por Peter Steinberger</p>
+            <p>© 2026 - Licença MIT</p>
+        </footer>
+    </div>
+</body>
+</html>
