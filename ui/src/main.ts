@@ -1,2 +1,2 @@
 import "./styles.css";
-import "./ui/presenter.ts";
+import "./ui/app.ts";

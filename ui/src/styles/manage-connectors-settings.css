@@ -2571,3 +2571,169 @@
   background: #b91c1c;
   border-color: #b91c1c;
 }
+
+/* Updates Section */
+.updates-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.updates-current {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  background: #1a1a1a;
+  border-radius: 12px;
+  border: 1px solid #2a2a2a;
+}
+
+.updates-current__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.updates-current__icon svg {
+  color: #ffffff;
+}
+
+.updates-current__info {
+  flex: 1;
+}
+
+.updates-current__title {
+  font-size: 14px;
+  color: #9ca3af;
+  margin: 0 0 4px 0;
+}
+
+.updates-current__version {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 4px 0;
+}
+
+.updates-current__date {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.updates-check-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.updates-check-btn .spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.updates-info {
+  padding: 20px;
+  background: #1a1a1a;
+  border-radius: 12px;
+  border: 1px solid #2a2a2a;
+}
+
+.updates-info__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+}
+
+.updates-info__description {
+  font-size: 13px;
+  color: #9ca3af;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.updates-changelog {
+  padding: 20px;
+  background: #1a1a1a;
+  border-radius: 12px;
+  border: 1px solid #2a2a2a;
+}
+
+.updates-changelog__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 12px 0;
+}
+
+.updates-changelog__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.updates-changelog__list li {
+  font-size: 13px;
+  color: #9ca3af;
+  padding: 8px 0;
+  padding-left: 24px;
+  position: relative;
+}
+
+.updates-changelog__list li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-weight: bold;
+}
+
+.updates-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.updates-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  color: #9ca3af;
+  text-decoration: none;
+  font-size: 13px;
+  transition: all 0.15s ease;
+}
+
+.updates-link:hover {
+  background: #252525;
+  border-color: #3a3a3a;
+  color: #ffffff;
+}
+
+.updates-link svg {
+  flex-shrink: 0;
+}

@@ -157,12 +157,10 @@ function loadExistingConfig() {
             
             updateStatus(t('status.ready'));
             
-            // Carregar chat automaticamente se já existe configuração
-            console.log('✓ Configuração existente detectada, carregando chat automaticamente...');
-            setTimeout(() => {
-                console.log('⏰ Timeout executado, chamando openChatWithToken()...');
-                openChatWithToken();
-            }, 500);
+            // NÃO carregar chat automaticamente aqui - o main.js já faz isso
+            // quando detecta configuração existente no app.whenReady()
+            console.log('✓ Configuração existente detectada');
+            console.log('ℹ️ O main.js irá carregar o chat automaticamente');
         } else {
             console.log('ℹ️ Nenhuma configuração existente encontrada');
         }
@@ -476,6 +474,9 @@ function renderWelcome(content) {
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
             <button onclick="startConfiguration()">${t('welcome.startButton')}</button>
             <button class="secondary" onclick="showJoinExistingUltron()">${t('welcome.joinExisting') || 'Entrar em ULTRON Existente'}</button>
+            <button class="secondary" onclick="clearGatewayConfiguration()" style="background: rgba(255, 68, 68, 0.1); border-color: rgba(255, 68, 68, 0.3); color: #ff4444;">
+                🗑️ Limpar Configuração
+            </button>
         </div>
     `;
 }
@@ -1732,6 +1733,30 @@ window.restartConfiguration = function() {
         model: null
     };
     render();
+};
+
+// Limpar configuração do gateway
+window.clearGatewayConfiguration = async function() {
+    try {
+        // Chamar o IPC para deletar a configuração imediatamente
+        const result = await ipcRenderer.invoke('delete-ultron-config');
+        
+        if (result.success) {
+            // Recarregar a página para voltar ao wizard
+            window.location.reload();
+        } else {
+            alert(
+                '✗ Erro ao limpar configuração:\n\n' +
+                result.error
+            );
+        }
+    } catch (error) {
+        console.error('Erro ao limpar configuração:', error);
+        alert(
+            '✗ Erro ao limpar configuração:\n\n' +
+            error.message
+        );
+    }
 };
 
 // Copiar token para clipboard

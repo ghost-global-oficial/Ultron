@@ -1,5 +1,4 @@
 import { html } from "lit";
-import { icons } from "../icons";
 import { renderSectionContent } from "./manage-connectors-sections";
 
 export type ConnectorSettings = {
@@ -13,9 +12,9 @@ export type ConnectorSettings = {
 export type ManageConnectorsSettingsProps = {
   isOpen: boolean;
   connectors: ConnectorSettings[];
-  activeSection: "account" | "scheduled-tasks" | "data-control" | "personalization" | "skills" | "connectors" | "integrations" | "hive" | "help";
+  activeSection: "account" | "scheduled-tasks" | "data-control" | "personalization" | "skills" | "connectors" | "integrations" | "hive" | "updates" | "help";
   onClose: () => void;
-  onSectionChange: (section: "account" | "scheduled-tasks" | "data-control" | "personalization" | "skills" | "connectors" | "integrations" | "hive" | "help") => void;
+  onSectionChange: (section: "account" | "scheduled-tasks" | "data-control" | "personalization" | "skills" | "connectors" | "integrations" | "hive" | "updates" | "help") => void;
   onConnectorClick: (id: string) => void;
   onAddConnectors: () => void;
 };
@@ -130,6 +129,15 @@ export function renderManageConnectorsSettings(props: ManageConnectorsSettingsPr
               <path d="M17.5 10.25L20 11.75v3L17.5 16.25 15 14.75v-3L17.5 10.25z"/>
             </svg>
             Colmeia
+          </a>
+          <a 
+            class="manage-connectors-settings__nav-item ${props.activeSection === "updates" ? "manage-connectors-settings__nav-item--active" : ""}"
+            @click=${() => props.onSectionChange("updates")}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
+            Atualizações
           </a>
           <a 
             class="manage-connectors-settings__nav-item ${props.activeSection === "help" ? "manage-connectors-settings__nav-item--active" : ""}"

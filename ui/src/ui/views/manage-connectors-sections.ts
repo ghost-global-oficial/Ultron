@@ -101,6 +101,8 @@ export function renderSectionContent(props: ManageConnectorsSettingsProps) {
       return renderIntegrationsSection(props);
     case "hive":
       return renderHiveSection(props);
+    case "updates":
+      return renderUpdatesSection(props);
     case "help":
       return renderHelpSection(props);
     default:
@@ -1510,6 +1512,106 @@ function renderHiveSection(props: ManageConnectorsSettingsProps) {
         >
           Resetar Colmeia
         </button>
+      </div>
+    </div>
+  `;
+}
+
+function renderUpdatesSection(props: ManageConnectorsSettingsProps) {
+  return html`
+    <div class="manage-connectors-settings__header">
+      <h2 class="manage-connectors-settings__title">Atualizações</h2>
+      <button class="manage-connectors-settings__close" @click=${props.onClose}>
+        ${icons.x}
+      </button>
+    </div>
+    <div class="manage-connectors-settings__section">
+      <div class="updates-section">
+        <div class="updates-current">
+          <div class="updates-current__icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
+          </div>
+          <div class="updates-current__info">
+            <h3 class="updates-current__title">Versão atual</h3>
+            <p class="updates-current__version">ULTRON v1.0.0</p>
+            <p class="updates-current__date">Última verificação: Hoje às 14:30</p>
+          </div>
+        </div>
+
+        <button 
+          class="btn btn-primary updates-check-btn"
+          @click=${async () => {
+            const button = document.querySelector('.updates-check-btn') as HTMLButtonElement;
+            if (!button) return;
+            
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = `
+              <svg class="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              </svg>
+              Verificando...
+            `;
+
+            try {
+              const { ipcRenderer } = (window as any).require('electron');
+              const result = await ipcRenderer.invoke('check-for-updates');
+              
+              if (result.updateAvailable) {
+                await showAlert(
+                  `Nova versão disponível: ${result.latestVersion}\\n\\nVisite o repositório para baixar a atualização.`
+                );
+              } else {
+                await showAlert('Você já está usando a versão mais recente do ULTRON!');
+              }
+            } catch (error) {
+              console.error('Erro ao verificar atualizações:', error);
+              await showAlert('Erro ao verificar atualizações. Tente novamente mais tarde.');
+            } finally {
+              button.disabled = false;
+              button.innerHTML = originalText;
+            }
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+          Verificar atualizações
+        </button>
+
+        <div class="updates-info">
+          <h4 class="updates-info__title">Atualizações automáticas</h4>
+          <p class="updates-info__description">
+            O ULTRON verifica automaticamente por atualizações a cada 24 horas. 
+            Você será notificado quando uma nova versão estiver disponível.
+          </p>
+        </div>
+
+        <div class="updates-changelog">
+          <h4 class="updates-changelog__title">Novidades na versão 1.0.0</h4>
+          <ul class="updates-changelog__list">
+            <li>Sistema de Colmeia P2P com criptografia E2E</li>
+            <li>Interface modernizada com novo design</li>
+            <li>Suporte para múltiplos modelos de IA</li>
+            <li>Sistema de verificação de atualizações via GitHub</li>
+            <li>Melhorias de performance e estabilidade</li>
+          </ul>
+        </div>
+
+        <div class="updates-links">
+          <a 
+            href="https://github.com/ghost-global-oficial/Ultron/releases" 
+            target="_blank" 
+            class="updates-link"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+            </svg>
+            Ver todas as versões no GitHub
+          </a>
+        </div>
       </div>
     </div>
   `;
