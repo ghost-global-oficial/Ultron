@@ -20,11 +20,11 @@ export type Agent = {
 export type AgentsPageProps = {
   agents: GatewayAgentRow[];
   // Chat-like props
-  draft: string;
+  draft?: string;
   connected: boolean;
   sending: boolean;
   canSend: boolean;
-  messages: unknown[];
+  messages?: unknown[];
   stream: string | null;
   attachments?: ChatAttachment[];
   // Event handlers
@@ -62,275 +62,429 @@ function adjustTextareaHeight(el: HTMLTextAreaElement) {
 export function renderAgentsPage(props: AgentsPageProps) {
   // Converte GatewayAgentRow para Agent
   const agents = props.agents.map(gatewayAgentToAgent);
-  const isEmpty = agents.length === 0;
-  const canCompose = props.connected;
-  const isBusy = props.sending || props.stream !== null;
+  const hasMessages = props.messages && props.messages.length > 0;
 
   return html`
-    <div class="chat-layout">
-      <!-- Main Chat Area -->
-      <div class="chat-main">
-        <!-- Messages Area -->
-        <div class="chat-messages" ${ref((el?: Element) => {
+    <div class="agents-page-wrapper">
+      <section class="card chat agents-chat">
+        <!-- Chat Thread (Messages Area) -->
+        <div class="chat-thread" ${ref((el?: Element) => {
           if (el) {
             const messagesEl = el as HTMLElement;
             // Auto-scroll to bottom
             messagesEl.scrollTop = messagesEl.scrollHeight;
           }
         })}>
-          ${isEmpty ? renderAgentsWelcome(props) : renderAgentsList(agents, props)}
+          ${hasMessages ? renderChatMessages(props) : renderAgentsChatWelcome(props)}
         </div>
+      </section>
+    </div>
+  `;
+}
 
-        <!-- Compose Area -->
-        <div class="chat-compose ${!canCompose ? "chat-compose--disabled" : ""}">
-          ${props.attachments && props.attachments.length > 0 ? html`
-            <div class="chat-compose__attachments">
-              ${props.attachments.map((att, idx) => html`
-                <div class="chat-compose__attachment">
-                  <img src=${att.dataUrl} alt="attachment" class="chat-compose__attachment-preview" />
-                  <button 
-                    class="chat-compose__attachment-remove"
-                    @click=${() => {
-                      if (props.onAttachmentsChange) {
-                        const next = [...props.attachments!];
-                        next.splice(idx, 1);
-                        props.onAttachmentsChange(next);
+const agentSuggestions = [
+  {
+    icon: "bot",
+    text: "Criar agent personalizado",
+    description: "com capacidades específicas",
+  },
+  {
+    icon: "code",
+    text: "Agent de desenvolvimento",
+    description: "para auxiliar na programação",
+  },
+  {
+    icon: "wand",
+    text: "Agent criativo",
+    description: "para design e conteúdo",
+  },
+  {
+    icon: "zap",
+    text: "Agent de automação",
+    description: "para tarefas repetitivas",
+  },
+];
+
+function renderAgentsChatWelcome(props: AgentsPageProps) {
+  const draft = props?.draft || '';
+  const connected = props?.connected ?? false;
+  const sending = props?.sending ?? false;
+  
+  return html`
+    <div class="agents-welcome">
+      <div class="agents-welcome__content">
+        <h1 class="agents-welcome__title">Que Agente gostaria de criar hoje?</h1>
+        
+        <!-- Input do prompt -->
+        <div class="agents-welcome__input-container">
+          <div class="chat-compose__row">
+            <div class="agents-welcome__textarea-wrapper">
+              <textarea
+                ${ref((el) => {
+                  if (el) {
+                    adjustTextareaHeight(el as HTMLTextAreaElement);
+                  }
+                })}
+                .value=${draft}
+                ?disabled=${!connected}
+                placeholder="Pergunte sobre agents ou peça para criar um novo"
+                @input=${(e: Event) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  if (props?.onDraftChange) {
+                    props.onDraftChange(target.value);
+                  }
+                  adjustTextareaHeight(target);
+                }}
+                @keydown=${(e: KeyboardEvent) => {
+                  if (e.key !== "Enter") {
+                    return;
+                  }
+                  if (e.isComposing || e.keyCode === 229) {
+                    return;
+                  }
+                  if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) {
+                    return;
+                  }
+                  e.preventDefault();
+                  if (draft.trim() && connected && props?.onSend) {
+                    props.onSend();
+                  }
+                }}
+              ></textarea>
+            </div>
+            <div class="chat-compose__bottom">
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <div class="chat-compose__add-menu">
+                  <button
+                    class="btn chat-compose__add-btn"
+                    type="button"
+                    title="Adicionar"
+                    aria-label="Adicionar"
+                    @click=${(e: Event) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const button = e.currentTarget as HTMLElement;
+                      const menu = button.parentElement?.querySelector('.chat-compose__menu') as HTMLElement;
+                      if (menu) {
+                        menu.classList.toggle('chat-compose__menu--open');
                       }
                     }}
                   >
-                    ${icons.x}
+                    ${icons.plus}
                   </button>
+                  <div class="chat-compose__menu">
+                    <button class="chat-compose__menu-item" type="button" @click=${() => {
+                      const menu = document.querySelector('.chat-compose__menu--open') as HTMLElement;
+                      if (menu) {
+                        menu.classList.remove('chat-compose__menu--open');
+                      }
+                      if (props?.onCreateAgent) {
+                        props.onCreateAgent();
+                      }
+                    }}>
+                      ${icons.bot} Criar novo Agent
+                    </button>
+                    <button class="chat-compose__menu-item" type="button" @click=${() => {
+                      const menu = document.querySelector('.chat-compose__menu--open') as HTMLElement;
+                      if (menu) {
+                        menu.classList.remove('chat-compose__menu--open');
+                      }
+                      if (props?.onRefresh) {
+                        props.onRefresh();
+                      }
+                    }}>
+                      ${icons.loader} Atualizar lista
+                    </button>
+                  </div>
                 </div>
-              `)}
-            </div>
-          ` : nothing}
-
-          <div class="chat-compose__input-wrapper">
-            <textarea
-              class="chat-compose__input"
-              placeholder=${canCompose ? "Converse com seus agents..." : "Conectando..."}
-              .value=${props.draft}
-              ?disabled=${!canCompose || isBusy}
-              @input=${(e: Event) => {
-                const target = e.target as HTMLTextAreaElement;
-                props.onDraftChange(target.value);
-                adjustTextareaHeight(target);
-              }}
-              @keydown=${(e: KeyboardEvent) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  if (props.canSend && !isBusy) {
-                    props.onSend();
-                    const target = e.target as HTMLTextAreaElement;
-                    setTimeout(() => adjustTextareaHeight(target), 0);
-                  }
-                }
-              }}
-              ${ref((el?: Element) => {
-                if (el) {
-                  adjustTextareaHeight(el as HTMLTextAreaElement);
-                }
-              })}
-            ></textarea>
-
-            <div class="chat-compose__actions">
-              <button
-                class="chat-compose__action-btn"
-                title="Criar novo agent"
-                @click=${props.onCreateAgent}
-              >
-                ${icons.plus}
-              </button>
-
-              <button
-                class="chat-compose__action-btn"
-                title="Atualizar"
-                @click=${props.onRefresh}
-              >
-                ${icons.loader}
-              </button>
-
-              <button
-                class="chat-compose__send"
-                ?disabled=${!props.canSend || isBusy}
-                @click=${props.onSend}
-              >
-                ${isBusy
-                  ? html`
-                      <svg class="chat-compose__send-spinner" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" />
+                <div class="agents-welcome__bot-menu">
+                  <button
+                    class="agents-welcome__connectors-btn"
+                    type="button"
+                    title="Configurações do Agente"
+                    aria-label="Configurações do Agente"
+                    @click=${(e: MouseEvent) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const button = e.currentTarget as HTMLElement;
+                      const menu = button.parentElement?.querySelector('.agents-welcome__bot-menu-dropdown') as HTMLElement;
+                      if (menu) {
+                        menu.classList.toggle('agents-welcome__bot-menu-dropdown--open');
+                      }
+                    }}
+                  >
+                    ${icons.bot}
+                  </button>
+                  <div class="agents-welcome__bot-menu-dropdown">
+                    <div class="agents-welcome__bot-menu-header">
+                      <span class="agents-welcome__bot-menu-title">Configurações do Agente</span>
+                    </div>
+                    <button class="agents-welcome__bot-menu-item" type="button" @click=${() => {
+                      const menu = document.querySelector('.agents-welcome__bot-menu-dropdown--open') as HTMLElement;
+                      if (menu) {
+                        menu.classList.remove('agents-welcome__bot-menu-dropdown--open');
+                      }
+                      // TODO: Abrir modal de adicionar à colmeia
+                      console.log('Adicionar à colmeia');
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        <polyline points="7.5 4.21 12 6.81 16.5 4.21"/>
+                        <polyline points="7.5 19.79 7.5 14.6 3 12"/>
+                        <polyline points="21 12 16.5 14.6 16.5 19.79"/>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                        <line x1="12" y1="22.08" x2="12" y2="12"/>
                       </svg>
-                    `
-                  : icons.arrowUp}
-              </button>
+                      Adicionar à Colmeia
+                    </button>
+                    <button class="agents-welcome__bot-menu-item" type="button" @click=${() => {
+                      const menu = document.querySelector('.agents-welcome__bot-menu-dropdown--open') as HTMLElement;
+                      if (menu) {
+                        menu.classList.remove('agents-welcome__bot-menu-dropdown--open');
+                      }
+                      // TODO: Abrir modal de configurar modelo
+                      console.log('Configurar modelo');
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                      </svg>
+                      Configurar Modelo
+                    </button>
+                    <button class="agents-welcome__bot-menu-item" type="button" @click=${() => {
+                      const menu = document.querySelector('.agents-welcome__bot-menu-dropdown--open') as HTMLElement;
+                      if (menu) {
+                        menu.classList.remove('agents-welcome__bot-menu-dropdown--open');
+                      }
+                      // TODO: Abrir modal de definir capacidades
+                      console.log('Definir capacidades');
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                      </svg>
+                      Definir Capacidades
+                    </button>
+                    <button class="agents-welcome__bot-menu-item" type="button" @click=${() => {
+                      const menu = document.querySelector('.agents-welcome__bot-menu-dropdown--open') as HTMLElement;
+                      if (menu) {
+                        menu.classList.remove('agents-welcome__bot-menu-dropdown--open');
+                      }
+                      // TODO: Abrir modal de configurar memória
+                      console.log('Configurar memória');
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                      </svg>
+                      Configurar Memória
+                    </button>
+                    <div class="agents-welcome__bot-menu-divider"></div>
+                    <button class="agents-welcome__bot-menu-item" type="button" @click=${() => {
+                      const menu = document.querySelector('.agents-welcome__bot-menu-dropdown--open') as HTMLElement;
+                      if (menu) {
+                        menu.classList.remove('agents-welcome__bot-menu-dropdown--open');
+                      }
+                      if (props?.onCreateAgent) {
+                        props.onCreateAgent();
+                      }
+                    }}>
+                      ${icons.plus}
+                      Criar Novo Agente
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button
+                  class="btn btn-icon chat-compose__mic-btn agents-welcome__mic-btn"
+                  type="button"
+                  title="Voz"
+                  aria-label="Voz"
+                  ?disabled=${!connected}
+                >
+                  ${icons.mic}
+                </button>
+                <button
+                  class="btn btn-icon chat-compose__send-btn ${draft.trim() ? 'chat-compose__send-btn--active' : ''} ${sending ? 'chat-compose__send-btn--loading' : ''}"
+                  type="button"
+                  ?disabled=${!connected || !draft.trim() || sending}
+                  @click=${() => {
+                    if (draft.trim() && connected && !sending && props?.onSend) {
+                      props.onSend();
+                    }
+                  }}
+                  title="Enviar mensagem"
+                  aria-label="Enviar mensagem"
+                >
+                  ${sending
+                    ? html`
+                        <svg class="chat-compose__send-spinner" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" />
+                        </svg>
+                      `
+                    : icons.arrowUp}
+                </button>
+              </div>
             </div>
           </div>
         </div>
+        
+        <!-- Sugestões -->
+        <div class="agents-welcome__suggestions">
+          ${agentSuggestions.map(
+            (suggestion) => html`
+              <button
+                class="agents-welcome__suggestion"
+                @click=${() => {
+                  if (props?.onDraftChange) {
+                    props.onDraftChange(suggestion.text);
+                  }
+                }}
+              >
+                <span class="agents-welcome__suggestion-icon">
+                  ${suggestion.icon === "bot"
+                    ? icons.bot
+                    : suggestion.icon === "code"
+                      ? icons.code
+                      : suggestion.icon === "wand"
+                        ? icons.wand
+                        : icons.zap}
+                </span>
+                <div class="agents-welcome__suggestion-text">
+                  <div class="agents-welcome__suggestion-title">${suggestion.text}</div>
+                  <div class="agents-welcome__suggestion-desc">${suggestion.description}</div>
+                </div>
+              </button>
+            `,
+          )}
+        </div>
+        
+        <!-- Agentes Criados -->
+        ${renderCreatedAgents(props)}
       </div>
     </div>
   `;
 }
 
-function renderAgentsWelcome(props: AgentsPageProps) {
+function renderCreatedAgents(props: AgentsPageProps) {
+  const agents = props.agents.map(gatewayAgentToAgent);
+  
+  if (agents.length === 0) {
+    return html`
+      <div class="agents-created">
+        <div class="agents-created__empty">
+          <div class="agents-created__empty-icon">${icons.bot}</div>
+          <p class="agents-created__empty-text">Nenhum agente criado ainda</p>
+        </div>
+      </div>
+    `;
+  }
+  
   return html`
-    <div class="chat-welcome">
-      <div class="chat-welcome__content">
-        <div class="chat-welcome__icon">${icons.bot}</div>
-        <h2 class="chat-welcome__title">Bem-vindo aos Agents</h2>
-        <p class="chat-welcome__description">
-          Gerencie e converse com seus agents de IA. Crie novos agents, configure suas capacidades
-          e interaja com eles diretamente.
-        </p>
-
-        <div class="chat-welcome__actions">
-          <button class="btn btn-primary" @click=${props.onCreateAgent}>
-            ${icons.plus}
-            Criar primeiro Agent
-          </button>
-        </div>
-
-        <div class="chat-welcome__features">
-          <div class="chat-welcome__feature">
-            <div class="chat-welcome__feature-icon">${icons.brain}</div>
-            <h3 class="chat-welcome__feature-title">Múltiplos Agents</h3>
-            <p class="chat-welcome__feature-description">
-              Crie agents especializados para diferentes tarefas
-            </p>
+    <div class="agents-created">
+      <div class="agents-created__header">
+        <h2 class="agents-created__title">Seus Agentes</h2>
+        <span class="agents-created__count">${agents.length} ${agents.length === 1 ? 'agente' : 'agentes'}</span>
+      </div>
+      
+      <div class="agents-created__grid">
+        ${agents.map(agent => html`
+          <div class="agent-card">
+            <div class="agent-card__header">
+              <div class="agent-card__avatar">
+                ${agent.avatar 
+                  ? html`<img src=${agent.avatar} alt=${agent.name} />`
+                  : html`<span>${agent.name.charAt(0).toUpperCase()}</span>`
+                }
+              </div>
+              <div class="agent-card__info">
+                <h3 class="agent-card__name">${agent.name}</h3>
+                <span class="agent-card__status agent-card__status--${agent.status}">
+                  ${agent.status === 'active' ? 'Ativo' : agent.status === 'inactive' ? 'Inativo' : 'Erro'}
+                </span>
+              </div>
+              <div class="agent-card__actions">
+                <button 
+                  class="agent-card__action-btn"
+                  @click=${() => props?.onEditAgent?.(agent.id)}
+                  title="Editar"
+                  aria-label="Editar agente"
+                >
+                  ${icons.edit}
+                </button>
+                <button 
+                  class="agent-card__action-btn agent-card__action-btn--danger"
+                  @click=${() => props?.onDeleteAgent?.(agent.id)}
+                  title="Deletar"
+                  aria-label="Deletar agente"
+                >
+                  ${icons.trash}
+                </button>
+              </div>
+            </div>
+            
+            <p class="agent-card__description">${agent.description}</p>
+            
+            <div class="agent-card__meta">
+              <span class="agent-card__meta-item">
+                ${icons.cpu}
+                ${agent.model}
+              </span>
+              <span class="agent-card__meta-item">
+                ${icons.cloud}
+                ${agent.provider}
+              </span>
+            </div>
+            
+            ${agent.capabilities.length > 0 ? html`
+              <div class="agent-card__capabilities">
+                ${agent.capabilities.slice(0, 3).map(cap => html`
+                  <span class="agent-card__capability">${cap}</span>
+                `)}
+              </div>
+            ` : nothing}
+            
+            <div class="agent-card__footer">
+              <label class="agent-card__toggle">
+                <input 
+                  type="checkbox" 
+                  .checked=${agent.status === "active"}
+                  @change=${() => props?.onToggleAgent?.(agent.id)}
+                />
+                <span class="agent-card__toggle-slider"></span>
+                <span class="agent-card__toggle-label">
+                  ${agent.status === "active" ? "Ativo" : "Inativo"}
+                </span>
+              </label>
+              ${agent.lastUsed ? html`
+                <span class="agent-card__time">
+                  ${icons.clock}
+                  ${formatRelativeTime(agent.lastUsed)}
+                </span>
+              ` : nothing}
+            </div>
           </div>
-
-          <div class="chat-welcome__feature">
-            <div class="chat-welcome__feature-icon">${icons.zap}</div>
-            <h3 class="chat-welcome__feature-title">Conversação Direta</h3>
-            <p class="chat-welcome__feature-description">
-              Converse com seus agents em tempo real
-            </p>
-          </div>
-
-          <div class="chat-welcome__feature">
-            <div class="chat-welcome__feature-icon">${icons.sliders}</div>
-            <h3 class="chat-welcome__feature-title">Configuração Flexível</h3>
-            <p class="chat-welcome__feature-description">
-              Personalize modelos, capacidades e comportamentos
-            </p>
-          </div>
-        </div>
+        `)}
       </div>
     </div>
   `;
 }
 
-function renderAgentsList(agents: Agent[], props: AgentsPageProps) {
-  return html`
-    <div class="agents-chat-list">
-      <!-- Header com stats -->
-      <div class="agents-chat-header">
-        <h2 class="agents-chat-title">Seus Agents</h2>
-        <div class="agents-chat-stats">
-          <span class="agents-chat-stat">
-            ${icons.bot}
-            ${agents.length} agent${agents.length !== 1 ? 's' : ''}
-          </span>
-          <span class="agents-chat-stat">
-            ${icons.check}
-            ${agents.filter(a => a.status === "active").length} ativo${agents.filter(a => a.status === "active").length !== 1 ? 's' : ''}
-          </span>
-        </div>
-      </div>
-
-      <!-- Lista de agents em formato de mensagens -->
-      <div class="agents-chat-messages">
-        ${agents.map(agent => renderAgentMessage(agent, props))}
-      </div>
-    </div>
-  `;
-}
-
-function renderAgentMessage(agent: Agent, props: AgentsPageProps) {
-  const statusClass = `agent-message-status--${agent.status}`;
-  const statusLabel = {
-    active: "Ativo",
-    inactive: "Inativo",
-    error: "Erro"
-  }[agent.status];
+function renderChatMessages(props: AgentsPageProps) {
+  // Renderiza as mensagens do chat aqui
+  if (!props.messages || props.messages.length === 0) {
+    return renderAgentsChatWelcome(props);
+  }
 
   return html`
-    <div class="agent-message">
-      <div class="agent-message__avatar">
-        ${agent.avatar 
-          ? html`<img src=${agent.avatar} alt=${agent.name} />`
-          : html`<span>${agent.name.charAt(0).toUpperCase()}</span>`
-        }
-      </div>
-
-      <div class="agent-message__content">
-        <div class="agent-message__header">
-          <span class="agent-message__name">${agent.name}</span>
-          <span class="agent-message__status ${statusClass}">${statusLabel}</span>
-          <div class="agent-message__actions">
-            <button 
-              class="agent-message__action-btn"
-              @click=${() => props.onEditAgent(agent.id)}
-              title="Editar"
-            >
-              ${icons.edit}
-            </button>
-            <button 
-              class="agent-message__action-btn agent-message__action-btn--danger"
-              @click=${() => props.onDeleteAgent(agent.id)}
-              title="Deletar"
-            >
-              ${icons.trash}
-            </button>
+    <div class="agents-chat-messages-list">
+      ${props.messages.map((msg: any) => html`
+        <div class="agents-chat-message">
+          <div class="agents-chat-message__content">
+            ${msg.content || msg.text || "Mensagem"}
           </div>
         </div>
-
-        <p class="agent-message__description">${agent.description}</p>
-
-        <div class="agent-message__meta">
-          <span class="agent-message__meta-item">
-            ${icons.cpu}
-            ${agent.model}
-          </span>
-          <span class="agent-message__meta-item">
-            ${icons.cloud}
-            ${agent.provider}
-          </span>
-          ${agent.messagesCount !== undefined ? html`
-            <span class="agent-message__meta-item">
-              ${icons.messageSquare}
-              ${agent.messagesCount} mensagens
-            </span>
-          ` : nothing}
-        </div>
-
-        ${agent.capabilities.length > 0 ? html`
-          <div class="agent-message__capabilities">
-            ${agent.capabilities.slice(0, 5).map(cap => html`
-              <span class="agent-message__capability">${cap}</span>
-            `)}
-          </div>
-        ` : nothing}
-
-        <div class="agent-message__footer">
-          <label class="agent-message__toggle">
-            <input 
-              type="checkbox" 
-              .checked=${agent.status === "active"}
-              @change=${() => props.onToggleAgent(agent.id)}
-            />
-            <span class="agent-message__toggle-slider"></span>
-            <span class="agent-message__toggle-label">
-              ${agent.status === "active" ? "Ativo" : "Inativo"}
-            </span>
-          </label>
-          ${agent.lastUsed ? html`
-            <span class="agent-message__time">
-              ${icons.clock}
-              ${formatRelativeTime(agent.lastUsed)}
-            </span>
-          ` : nothing}
-        </div>
-      </div>
+      `)}
     </div>
   `;
 }

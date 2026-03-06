@@ -2,6 +2,7 @@
   "name": "openclaw",
   "version": "1.0.0",
   "description": "Ultron - Moltbot Powered AI Assistant for Windows",
+  "author": "Ultron Team",
   "main": "main.js",
   "type": "module",
   "scripts": {
@@ -107,7 +108,7 @@
           ]
         }
       ],
-      "icon": "assets/icon.png",
+      "icon": "assets/icon.ico",
       "artifactName": "${productName}-Setup-${version}.${ext}",
       "publisherName": "Ultron"
     },
@@ -118,9 +119,9 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Ultron",
-      "installerIcon": "assets/icon.png",
-      "uninstallerIcon": "assets/icon.png",
-      "installerHeaderIcon": "assets/icon.png",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
       "deleteAppDataOnUninstall": false,
       "perMachine": false,
       "runAfterFinish": true,
